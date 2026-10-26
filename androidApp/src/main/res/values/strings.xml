@@ -1,3 +1,5 @@
 <resources>
-    <string name="app_name">EnkanHaban</string>
+    <string name="app_name">እንካን ሃባን | Enkan Haban</string>
+    <string name="app_name_tigrinya">እንካን ሃባን</string>
+    <string name="app_name_english">Enkan Haban</string>
 </resources>
