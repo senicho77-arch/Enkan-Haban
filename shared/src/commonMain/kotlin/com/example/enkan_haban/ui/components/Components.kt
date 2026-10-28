@@ -45,6 +45,8 @@ import com.example.enkan_haban.ui.theme.Gold
 import com.example.enkan_haban.ui.theme.HeaderGradient
 import com.example.enkan_haban.ui.theme.Navy
 import com.example.enkan_haban.ui.theme.categoryColors
+import com.example.enkan_haban.util.Currency
+import com.example.enkan_haban.util.CurrencySettings
 import com.example.enkan_haban.util.formatPrice
 
 /** Soft drop shadow tinted with the brand navy, used on cards and the search bar. */
@@ -232,6 +234,35 @@ fun SimpleTopBar(title: String, onBack: (() -> Unit)? = null) {
                 color = Color.White,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
+            )
+        }
+    }
+}
+
+/**
+ * Two-way currency switch: Uganda shilling or US dollar. Every price in the app
+ * follows the choice immediately. [onDark] styles it for the gradient header.
+ */
+@Composable
+fun CurrencyToggle(modifier: Modifier = Modifier, onDark: Boolean = false) {
+    val track = if (onDark) Color.White.copy(alpha = 0.18f) else MaterialTheme.colorScheme.surfaceVariant
+    val idleText = if (onDark) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+    Row(
+        modifier.clip(RoundedCornerShape(50)).background(track).padding(3.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Currency.entries.forEach { currency ->
+            val selected = CurrencySettings.current == currency
+            Text(
+                if (currency == Currency.USD) "$ USD" else "UGX",
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = if (selected) FontWeight.ExtraBold else FontWeight.SemiBold,
+                color = if (selected) Navy else idleText,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(50))
+                    .background(if (selected) Color.White else Color.Transparent)
+                    .clickable { CurrencySettings.current = currency }
+                    .padding(horizontal = 10.dp, vertical = 6.dp),
             )
         }
     }

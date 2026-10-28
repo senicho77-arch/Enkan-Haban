@@ -28,7 +28,7 @@ data class Seller(
     val isVerified: Boolean = false,
 )
 
-/** Prices are stored in minor currency units (e.g. cents) to avoid floating-point errors. */
+/** Prices are stored in US cents and converted for display (see util/Money.kt). */
 data class Product(
     val id: String,
     val title: String,

@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -17,6 +18,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -26,7 +28,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.enkan_haban.AppContainer
 import com.example.enkan_haban.domain.Condition
 import com.example.enkan_haban.ui.components.SimpleTopBar
-import com.example.enkan_haban.util.CURRENCY_CODE
+import com.example.enkan_haban.ui.components.CurrencyToggle
+import com.example.enkan_haban.util.CurrencySettings
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -48,7 +51,11 @@ fun SellScreen(
             FormField("Description", form.description, errors["description"], singleLine = false) { v ->
                 viewModel.update { it.copy(description = v) }
             }
-            FormField("Price ($CURRENCY_CODE)", form.price, errors["price"], keyboardType = KeyboardType.Decimal) { v ->
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("Price currency", style = MaterialTheme.typography.labelLarge, modifier = Modifier.weight(1f))
+                CurrencyToggle()
+            }
+            FormField("Price (${CurrencySettings.current.code})", form.price, errors["price"], keyboardType = KeyboardType.Decimal) { v ->
                 viewModel.update { it.copy(price = v) }
             }
 

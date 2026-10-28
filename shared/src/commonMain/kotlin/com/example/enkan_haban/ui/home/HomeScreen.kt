@@ -53,6 +53,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.enkan_haban.AppContainer
 import com.example.enkan_haban.domain.Category
+import com.example.enkan_haban.ui.components.CurrencyToggle
 import com.example.enkan_haban.ui.components.ProductCard
 import com.example.enkan_haban.ui.components.SectionHeader
 import com.example.enkan_haban.ui.components.softShadow
@@ -215,7 +216,7 @@ private fun HomeHeader(query: String, onQueryChange: (String) -> Unit) {
                         color = Color.White.copy(alpha = 0.8f),
                     )
                 }
-                HeaderIconButton("🔔")
+                CurrencyToggle(onDark = true)
             }
             Spacer(Modifier.height(16.dp))
             OutlinedTextField(
@@ -239,12 +240,6 @@ private fun HomeHeader(query: String, onQueryChange: (String) -> Unit) {
     }
 }
 
-@Composable
-private fun HeaderIconButton(emoji: String, onClick: () -> Unit = {}) {
-    Surface(onClick = onClick, shape = CircleShape, color = Color.White.copy(alpha = 0.18f), modifier = Modifier.size(42.dp)) {
-        Box(contentAlignment = Alignment.Center) { Text(emoji, fontSize = 18.sp) }
-    }
-}
 
 // ── Promo banners ────────────────────────────────────────────────────────────
 

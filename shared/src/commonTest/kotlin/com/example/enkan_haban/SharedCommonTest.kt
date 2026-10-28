@@ -10,6 +10,7 @@ import com.example.enkan_haban.ui.navigation.Navigator
 import com.example.enkan_haban.ui.navigation.Route
 import com.example.enkan_haban.ui.sell.SellForm
 import com.example.enkan_haban.ui.sell.validate
+import com.example.enkan_haban.util.Currency
 import com.example.enkan_haban.util.formatPrice
 import com.example.enkan_haban.util.parsePrice
 import kotlin.test.Test
@@ -21,20 +22,33 @@ import kotlin.test.assertTrue
 
 class MoneyTest {
     @Test
-    fun formatsWholeAndFractionalAmounts() {
-        assertEquals("ETB 0", formatPrice(0))
-        assertEquals("ETB 1,250", formatPrice(125_000))
-        assertEquals("ETB 1,200,000", formatPrice(120_000_000))
-        assertEquals("ETB 12.05", formatPrice(1_205))
-        assertEquals("-ETB 3", formatPrice(-300))
+    fun formatsDollars() {
+        assertEquals("$0", formatPrice(0, Currency.USD))
+        assertEquals("$1,250", formatPrice(125_000, Currency.USD))
+        assertEquals("$12.05", formatPrice(1_205, Currency.USD))
+        assertEquals("-$3", formatPrice(-300, Currency.USD))
     }
 
     @Test
-    fun parsesUserInput() {
-        assertEquals(125_000L, parsePrice("1,250"))
-        assertEquals(125_050L, parsePrice(" 1250.5 "))
-        assertNull(parsePrice("abc"))
-        assertNull(parsePrice("-5"))
+    fun formatsShillingsRoundedToHundreds() {
+        assertEquals("UGX 0", formatPrice(0, Currency.UGX))
+        assertEquals("UGX 3,700", formatPrice(100, Currency.UGX))
+        assertEquals("UGX 1,394,600", formatPrice(38_000, Currency.UGX))
+    }
+
+    @Test
+    fun parsesUserInputIntoUsdCents() {
+        assertEquals(125_000L, parsePrice("1,250", Currency.USD))
+        assertEquals(125_050L, parsePrice(" 1250.5 ", Currency.USD))
+        assertEquals(100L, parsePrice("3670", Currency.UGX))
+        assertNull(parsePrice("abc", Currency.USD))
+        assertNull(parsePrice("-5", Currency.UGX))
+    }
+
+    @Test
+    fun shillingPriceSurvivesRoundTrip() {
+        val stored = parsePrice("50,000", Currency.UGX)!!
+        assertEquals("UGX 50,000", formatPrice(stored, Currency.UGX))
     }
 }
 

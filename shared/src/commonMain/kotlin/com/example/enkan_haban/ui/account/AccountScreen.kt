@@ -14,7 +14,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.example.enkan_haban.ui.components.CurrencyToggle
 import com.example.enkan_haban.ui.components.SimpleTopBar
+import com.example.enkan_haban.util.CurrencySettings
 
 @Composable
 fun AccountScreen() {
@@ -27,6 +29,13 @@ fun AccountScreen() {
                     Text("Sign in to track orders, manage your ads and chat with sellers.")
                     Button(onClick = { /* TODO: authentication */ }, enabled = false) { Text("Sign in (coming soon)") }
                 }
+            }
+            Card(Modifier.fillMaxWidth()) {
+                ListItem(
+                    headlineContent = { Text("💱  ገንዘብ · Currency") },
+                    supportingContent = { Text(CurrencySettings.current.localName) },
+                    trailingContent = { CurrencyToggle() },
+                )
             }
             Card(Modifier.fillMaxWidth()) {
                 listOf("📦  My orders", "📢  My ads", "❤️  Saved items", "⚙️  Settings").forEachIndexed { index, label ->
