@@ -9,14 +9,14 @@ import com.example.enkan_haban.domain.Seller
 /** Demo content used until the backend exists. */
 object SampleData {
     val categories = listOf(
-        Category("phones", "Phones", "📱"),
-        Category("electronics", "Electronics", "💻"),
-        Category("fashion", "Fashion", "👗"),
-        Category("home", "Home", "🛋️"),
-        Category("vehicles", "Vehicles", "🚗"),
-        Category("property", "Property", "🏠"),
-        Category("beauty", "Beauty", "💄"),
-        Category("groceries", "Groceries", "🛒"),
+        Category("phones", "Phones", "📱", "ተሌፎን"),
+        Category("electronics", "Electronics", "💻", "ኤሌክትሮኒክስ"),
+        Category("fashion", "Fashion", "👗", "ክዳውንቲ"),
+        Category("home", "Home", "🛋️", "ኣቑሑ ገዛ"),
+        Category("vehicles", "Vehicles", "🚗", "መኻይን"),
+        Category("property", "Property", "🏠", "ኣባይቲ"),
+        Category("beauty", "Beauty", "💄", "ጽባቐ"),
+        Category("groceries", "Groceries", "🛒", "መግቢ"),
     )
 
     private val officialStore = Seller("store", "EnkanHaban Store", "+251 900 000 000", isVerified = true)

@@ -17,6 +17,8 @@ data class Category(
     val id: String,
     val name: String,
     val emoji: String,
+    /** Name shown in the app (Tigrinya); falls back to [name]. */
+    val localName: String = name,
 )
 
 data class Seller(

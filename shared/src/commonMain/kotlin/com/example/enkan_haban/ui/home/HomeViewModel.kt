@@ -17,7 +17,12 @@ data class HomeUiState(
     val selectedCategoryId: String? = null,
     val categories: List<Category> = emptyList(),
     val products: List<Product> = emptyList(),
-)
+    /** Discounted products for the "today's deals" row, independent of filters. */
+    val deals: List<Product> = emptyList(),
+) {
+    /** Banners and deal rows only show on the plain home feed, not while filtering. */
+    val isBrowsing: Boolean get() = query.isBlank() && selectedCategoryId == null
+}
 
 class HomeViewModel(repository: ProductRepository) : ViewModel() {
     private val query = MutableStateFlow("")
@@ -30,11 +35,17 @@ class HomeViewModel(repository: ProductRepository) : ViewModel() {
                 selectedCategoryId = categoryId,
                 categories = repository.categories,
                 products = filterProducts(products, q, categoryId),
+                deals = products.filter { it.discountPercent != null }.sortedByDescending { it.discountPercent },
             )
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HomeUiState(categories = repository.categories))
 
     fun onQueryChange(value: String) {
         query.value = value
+    }
+
+    /** Shows only [categoryId] (or everything when null), e.g. from a promo banner. */
+    fun selectCategory(categoryId: String?) {
+        selectedCategoryId.value = categoryId
     }
 
     /** Selecting the active category again clears the filter. */
