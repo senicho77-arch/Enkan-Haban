@@ -8,7 +8,10 @@ import com.example.enkan_haban.data.subtotal
 import com.example.enkan_haban.domain.ListingType
 import com.example.enkan_haban.ui.navigation.Navigator
 import com.example.enkan_haban.ui.navigation.Route
+import com.example.enkan_haban.domain.Photo
+import com.example.enkan_haban.ui.sell.MAX_PHOTOS
 import com.example.enkan_haban.ui.sell.SellForm
+import com.example.enkan_haban.ui.sell.mergePhotos
 import com.example.enkan_haban.ui.sell.validate
 import com.example.enkan_haban.util.formatPrice
 import com.example.enkan_haban.util.parsePrice
@@ -96,6 +99,29 @@ class SellValidationTest {
             phone = "+251 911 000 000",
         )
         assertTrue(validate(form).isEmpty())
+    }
+}
+
+class PhotoLimitTest {
+    private fun photos(n: Int) = List(n) { Photo(byteArrayOf(it.toByte())) }
+
+    @Test
+    fun limitIsTen() {
+        assertEquals(10, MAX_PHOTOS)
+    }
+
+    @Test
+    fun keepsAtMostTenAndCountsTheRest() {
+        val result = mergePhotos(photos(7), photos(5))
+        assertEquals(10, result.photos.size)
+        assertEquals(2, result.dropped)
+        assertEquals(0, mergePhotos(result.photos, photos(1)).photos.size - 10)
+    }
+
+    @Test
+    fun elevenPhotosFailValidation() {
+        assertTrue("photos" !in validate(SellForm(photos = photos(10))))
+        assertTrue("photos" in validate(SellForm(photos = photos(11))))
     }
 }
 

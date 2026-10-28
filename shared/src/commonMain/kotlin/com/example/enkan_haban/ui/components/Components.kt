@@ -1,5 +1,6 @@
 package com.example.enkan_haban.ui.components
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -19,9 +20,11 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
@@ -29,13 +32,20 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.enkan_haban.data.SampleData
 import com.example.enkan_haban.domain.ListingType
+import com.example.enkan_haban.domain.Photo
 import com.example.enkan_haban.domain.Product
 import com.example.enkan_haban.ui.theme.DealRed
 import com.example.enkan_haban.util.formatPrice
+import org.jetbrains.compose.resources.ExperimentalResourceApi
+import org.jetbrains.compose.resources.decodeToImageBitmap
 
-/** Image placeholder until real product photos are loaded from the backend. */
+/** The product's first photo, or a category emoji placeholder when it has none. */
 @Composable
 fun ProductImage(product: Product, modifier: Modifier = Modifier, emojiSize: Int = 48) {
+    product.photos.firstOrNull()?.let { photo ->
+        PhotoImage(photo, modifier)
+        return
+    }
     val emoji = SampleData.categories.firstOrNull { it.id == product.categoryId }?.emoji ?: "📦"
     Box(
         modifier = modifier.background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)),
@@ -135,5 +145,17 @@ fun SimpleTopBar(title: String, onBack: (() -> Unit)? = null) {
             }
             Text(title, style = MaterialTheme.typography.titleLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
+    }
+}
+
+/** Shows a photo picked on the device, cropped to fill [modifier]'s bounds. */
+@OptIn(ExperimentalResourceApi::class)
+@Composable
+fun PhotoImage(photo: Photo, modifier: Modifier = Modifier) {
+    val bitmap = remember(photo) { runCatching { photo.bytes.decodeToImageBitmap() }.getOrNull() }
+    if (bitmap != null) {
+        Image(bitmap = bitmap, contentDescription = null, contentScale = ContentScale.Crop, modifier = modifier)
+    } else {
+        Box(modifier.background(MaterialTheme.colorScheme.surfaceVariant))
     }
 }

@@ -40,6 +40,7 @@ data class Product(
     val oldPrice: Long? = null,
     val rating: Double? = null,
     val imageUrls: List<String> = emptyList(),
+    val photos: List<Photo> = emptyList(),
 ) {
     val discountPercent: Int?
         get() = oldPrice?.takeIf { it > price }?.let { ((it - price) * 100 / it).toInt() }
@@ -61,4 +62,11 @@ data class ListingDraft(
     val condition: Condition,
     val location: String,
     val phone: String,
+    val photos: List<Photo> = emptyList(),
 )
+
+/**
+ * A photo picked on the device, kept as JPEG bytes until ads are uploaded to a backend.
+ * Compared by identity, so the same picture picked twice is two separate photos.
+ */
+class Photo(val bytes: ByteArray)

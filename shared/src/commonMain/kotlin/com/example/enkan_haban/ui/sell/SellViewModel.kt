@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.enkan_haban.data.ProductRepository
 import com.example.enkan_haban.domain.Condition
 import com.example.enkan_haban.domain.ListingDraft
+import com.example.enkan_haban.domain.Photo
 import com.example.enkan_haban.domain.Seller
 import com.example.enkan_haban.util.parsePrice
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -21,13 +22,27 @@ data class SellForm(
     val condition: Condition = Condition.USED,
     val location: String = "",
     val phone: String = "",
+    val photos: List<Photo> = emptyList(),
 )
 
 data class SellUiState(
     val form: SellForm = SellForm(),
     val errors: Map<String, String> = emptyMap(),
     val isSubmitting: Boolean = false,
-)
+    /** Shown under the photos, e.g. when some picked photos didn't fit. */
+    val photoMessage: String? = null,
+) {
+    val photoSlotsLeft: Int get() = MAX_PHOTOS - form.photos.size
+}
+
+data class PhotoAddResult(val photos: List<Photo>, val dropped: Int)
+
+/** Appends [picked] to [current], keeping at most [MAX_PHOTOS]; extras are dropped and counted. */
+fun mergePhotos(current: List<Photo>, picked: List<Photo>): PhotoAddResult {
+    val room = (MAX_PHOTOS - current.size).coerceAtLeast(0)
+    val kept = picked.take(room)
+    return PhotoAddResult(current + kept, dropped = picked.size - kept.size)
+}
 
 /** Returns field name -> error message; empty when the form is valid. */
 fun validate(form: SellForm): Map<String, String> = buildMap {
@@ -38,6 +53,7 @@ fun validate(form: SellForm): Map<String, String> = buildMap {
     if (form.categoryId == null) put("category", "Choose a category")
     if (form.location.isBlank()) put("location", "Enter your location")
     if (form.phone.count { it.isDigit() } < 9) put("phone", "Enter a valid phone number")
+    if (form.photos.size > MAX_PHOTOS) put("photos", "You can add up to $MAX_PHOTOS photos")
 }
 
 class SellViewModel(
@@ -51,6 +67,28 @@ class SellViewModel(
 
     fun update(transform: (SellForm) -> SellForm) {
         _uiState.update { it.copy(form = transform(it.form), errors = emptyMap()) }
+    }
+
+    fun addPhotos(picked: List<ByteArray>) {
+        if (picked.isEmpty()) return
+        _uiState.update { state ->
+            val result = mergePhotos(state.form.photos, picked.map(::Photo))
+            state.copy(
+                form = state.form.copy(photos = result.photos),
+                errors = state.errors - "photos",
+                photoMessage = if (result.dropped > 0) {
+                    "Only $MAX_PHOTOS photos are allowed — ${result.dropped} not added"
+                } else {
+                    null
+                },
+            )
+        }
+    }
+
+    fun removePhoto(photo: Photo) {
+        _uiState.update { state ->
+            state.copy(form = state.form.copy(photos = state.form.photos - photo), photoMessage = null)
+        }
     }
 
     /** Validates and posts the ad, then calls [onPosted] with the new product id. */
@@ -72,6 +110,7 @@ class SellViewModel(
                     condition = form.condition,
                     location = form.location.trim(),
                     phone = form.phone.trim(),
+                    photos = form.photos,
                 ),
                 seller,
             )

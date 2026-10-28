@@ -42,6 +42,7 @@ class InMemoryProductRepository(
             location = draft.location,
             seller = seller.copy(phone = draft.phone),
             listingType = ListingType.CLASSIFIED,
+            photos = draft.photos,
         )
         products.update { listOf(product) + it }
         return product
