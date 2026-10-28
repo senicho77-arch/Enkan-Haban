@@ -61,6 +61,12 @@ private val LightColors = lightColorScheme(
     surfaceVariant = Color(0xFFEAF1F7),
     onSurfaceVariant = Color(0xFF5B6B78),
     outlineVariant = Color(0xFFDCE6EE),
+    // Material's default surface containers are lavender; tint them blue-gray to match the brand.
+    surfaceContainerLowest = Color.White,
+    surfaceContainerLow = Color(0xFFF7FAFC),
+    surfaceContainer = Color(0xFFF1F6FA),
+    surfaceContainerHigh = Color(0xFFEDF3F8),
+    surfaceContainerHighest = Color(0xFFEAF1F7),
 )
 
 private val DarkColors = darkColorScheme(

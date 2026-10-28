@@ -53,9 +53,21 @@ fun convertFromUsdCents(usdCents: Long, currency: Currency): Long = when (curren
  * Formats a price stored in US cents, e.g. "UGX 1,395,000" or "$380" / "$12.05".
  * Reads [CurrencySettings.current] by default, so composables recompose on a switch.
  */
-fun formatPrice(usdCents: Long, currency: Currency = CurrencySettings.current): String {
-    val sign = if (usdCents < 0) "-" else ""
-    val amount = abs(convertFromUsdCents(usdCents, currency))
+fun formatPrice(usdCents: Long, currency: Currency = CurrencySettings.current): String =
+    formatConverted(convertFromUsdCents(usdCents, currency), currency)
+
+/**
+ * Formats a cart total as the sum of each line's displayed price, so the subtotal always
+ * matches what the shopper adds up on screen (rounding per item, not on the total).
+ * Each pair is (unit price in US cents, quantity).
+ */
+fun formatTotal(lines: List<Pair<Long, Int>>, currency: Currency = CurrencySettings.current): String =
+    formatConverted(lines.sumOf { (usdCents, quantity) -> convertFromUsdCents(usdCents, currency) * quantity }, currency)
+
+/** Formats an amount already in [currency]'s smallest shown unit (cents for USD, shillings for UGX). */
+private fun formatConverted(units: Long, currency: Currency): String {
+    val sign = if (units < 0) "-" else ""
+    val amount = abs(units)
     return if (currency.decimals == 2) {
         val minor = amount % 100
         val fraction = if (minor == 0L) "" else "." + minor.toString().padStart(2, '0')

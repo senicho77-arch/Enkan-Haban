@@ -12,6 +12,7 @@ import com.example.enkan_haban.ui.sell.SellForm
 import com.example.enkan_haban.ui.sell.validate
 import com.example.enkan_haban.util.Currency
 import com.example.enkan_haban.util.formatPrice
+import com.example.enkan_haban.util.formatTotal
 import com.example.enkan_haban.util.parsePrice
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -43,6 +44,13 @@ class MoneyTest {
         assertEquals(100L, parsePrice("3670", Currency.UGX))
         assertNull(parsePrice("abc", Currency.USD))
         assertNull(parsePrice("-5", Currency.UGX))
+    }
+
+    @Test
+    fun cartTotalMatchesSumOfShownPrices() {
+        // UGX 1,394,600 + 2 × UGX 55,100 = UGX 1,504,800 (rounding the USD total would give 1,504,700).
+        assertEquals("UGX 1,504,800", formatTotal(listOf(38_000L to 1, 1_500L to 2), Currency.UGX))
+        assertEquals("$410", formatTotal(listOf(38_000L to 1, 1_500L to 2), Currency.USD))
     }
 
     @Test

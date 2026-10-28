@@ -43,6 +43,7 @@ import com.example.enkan_haban.domain.CartItem
 import com.example.enkan_haban.ui.components.ProductImage
 import com.example.enkan_haban.ui.components.SimpleTopBar
 import com.example.enkan_haban.util.formatPrice
+import com.example.enkan_haban.util.formatTotal
 
 @Composable
 fun CartScreen(
@@ -86,10 +87,10 @@ fun CartScreen(
             Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     Text("Subtotal", style = MaterialTheme.typography.titleMedium)
-                    Text(formatPrice(items.subtotal), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Text(formatTotal(items.map { it.product.price to it.quantity }), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                 }
                 Button(onClick = { showCheckoutInfo = true }, modifier = Modifier.fillMaxWidth()) {
-                    Text("Checkout (${formatPrice(items.subtotal)})")
+                    Text("Checkout (${formatTotal(items.map { it.product.price to it.quantity })})")
                 }
             }
         }
