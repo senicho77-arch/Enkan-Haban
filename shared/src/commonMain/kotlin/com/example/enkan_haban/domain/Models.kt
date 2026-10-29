@@ -8,9 +8,9 @@ package com.example.enkan_haban.domain
 enum class ListingType { STORE, CLASSIFIED }
 
 enum class Condition(val label: String) {
-    NEW("Brand new"),
-    USED("Used"),
-    REFURBISHED("Refurbished"),
+    NEW("ሓድሽ"),
+    USED("ዝተጠቐመሉ"),
+    REFURBISHED("ዝተሓደሰ"),
 }
 
 data class Category(

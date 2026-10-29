@@ -31,13 +31,13 @@ data class SellUiState(
 
 /** Returns field name -> error message; empty when the form is valid. */
 fun validate(form: SellForm): Map<String, String> = buildMap {
-    if (form.title.trim().length < 5) put("title", "Title must be at least 5 characters")
-    if (form.description.isBlank()) put("description", "Add a short description")
+    if (form.title.trim().length < 5) put("title", "ኣርእስቲ እንተወሓደ 5 ፊደላት ክኸውን ኣለዎ")
+    if (form.description.isBlank()) put("description", "ሓጺር መግለጺ ወስኽ")
     val price = parsePrice(form.price)
-    if (price == null || price <= 0) put("price", "Enter a valid price")
-    if (form.categoryId == null) put("category", "Choose a category")
-    if (form.location.isBlank()) put("location", "Enter your location")
-    if (form.phone.count { it.isDigit() } < 9) put("phone", "Enter a valid phone number")
+    if (price == null || price <= 0) put("price", "ቅኑዕ ዋጋ ኣእቱ")
+    if (form.categoryId == null) put("category", "ዓይነት ምረጽ")
+    if (form.location.isBlank()) put("location", "ቦታኻ ኣእቱ")
+    if (form.phone.count { it.isDigit() } < 9) put("phone", "ቅኑዕ ቁጽሪ ተሌፎን ኣእቱ")
 }
 
 class SellViewModel(

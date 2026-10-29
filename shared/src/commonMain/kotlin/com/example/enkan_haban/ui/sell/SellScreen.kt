@@ -42,35 +42,35 @@ fun SellScreen(
     val errors = state.errors
 
     Column(Modifier.fillMaxSize()) {
-        SimpleTopBar(title = "Post an ad")
+        SimpleTopBar(title = "ማስታወቂያ ኣእትው")
         Column(
             modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            FormField("Title", form.title, errors["title"]) { v -> viewModel.update { it.copy(title = v) } }
-            FormField("Description", form.description, errors["description"], singleLine = false) { v ->
+            FormField("ኣርእስቲ", form.title, errors["title"]) { v -> viewModel.update { it.copy(title = v) } }
+            FormField("መግለጺ", form.description, errors["description"], singleLine = false) { v ->
                 viewModel.update { it.copy(description = v) }
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("Price currency", style = MaterialTheme.typography.labelLarge, modifier = Modifier.weight(1f))
+                Text("ገንዘብ ዋጋ", style = MaterialTheme.typography.labelLarge, modifier = Modifier.weight(1f))
                 CurrencyToggle()
             }
-            FormField("Price (${CurrencySettings.current.code})", form.price, errors["price"], keyboardType = KeyboardType.Decimal) { v ->
+            FormField("ዋጋ (${CurrencySettings.current.code})", form.price, errors["price"], keyboardType = KeyboardType.Decimal) { v ->
                 viewModel.update { it.copy(price = v) }
             }
 
-            SectionLabel("Category", errors["category"])
+            SectionLabel("ዓይነት", errors["category"])
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 viewModel.categories.forEach { category ->
                     FilterChip(
                         selected = form.categoryId == category.id,
                         onClick = { viewModel.update { it.copy(categoryId = category.id) } },
-                        label = { Text("${category.emoji} ${category.name}") },
+                        label = { Text("${category.emoji} ${category.localName}") },
                     )
                 }
             }
 
-            SectionLabel("Condition", null)
+            SectionLabel("ኩነታት", null)
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Condition.entries.forEach { condition ->
                     FilterChip(
@@ -81,8 +81,8 @@ fun SellScreen(
                 }
             }
 
-            FormField("Location (city, area)", form.location, errors["location"]) { v -> viewModel.update { it.copy(location = v) } }
-            FormField("Phone number", form.phone, errors["phone"], keyboardType = KeyboardType.Phone) { v ->
+            FormField("ቦታ (ከተማ፡ ከባቢ)", form.location, errors["location"]) { v -> viewModel.update { it.copy(location = v) } }
+            FormField("ቁጽሪ ተሌፎን", form.phone, errors["phone"], keyboardType = KeyboardType.Phone) { v ->
                 viewModel.update { it.copy(phone = v) }
             }
 
@@ -90,7 +90,7 @@ fun SellScreen(
                 onClick = { viewModel.submit(onPosted) },
                 enabled = !state.isSubmitting,
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-            ) { Text("Post ad") }
+            ) { Text("ማስታወቂያ ለጥፍ") }
         }
     }
 }

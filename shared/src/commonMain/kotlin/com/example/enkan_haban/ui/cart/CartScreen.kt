@@ -55,7 +55,7 @@ fun CartScreen(
     var showCheckoutInfo by remember { mutableStateOf(false) }
 
     Column(Modifier.fillMaxSize()) {
-        SimpleTopBar(title = "Cart (${items.itemCount})")
+        SimpleTopBar(title = "ዘንቢል (${items.itemCount})")
         if (items.isEmpty()) {
             Column(
                 Modifier.fillMaxSize().padding(32.dp),
@@ -63,9 +63,9 @@ fun CartScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Text("🛒", style = MaterialTheme.typography.displayMedium)
-                Text("Your cart is empty", style = MaterialTheme.typography.titleMedium)
+                Text("ዘንቢልካ ባዶ እዩ", style = MaterialTheme.typography.titleMedium)
                 Spacer(Modifier.size(16.dp))
-                Button(onClick = onContinueShopping) { Text("Start shopping") }
+                Button(onClick = onContinueShopping) { Text("ዕደጋ ጀምር") }
             }
             return@Column
         }
@@ -86,11 +86,11 @@ fun CartScreen(
         Surface(tonalElevation = 3.dp, shadowElevation = 8.dp) {
             Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text("Subtotal", style = MaterialTheme.typography.titleMedium)
+                    Text("ድምር", style = MaterialTheme.typography.titleMedium)
                     Text(formatTotal(items.map { it.product.price to it.quantity }), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                 }
                 Button(onClick = { showCheckoutInfo = true }, modifier = Modifier.fillMaxWidth()) {
-                    Text("Checkout (${formatTotal(items.map { it.product.price to it.quantity })})")
+                    Text("ክፈል (${formatTotal(items.map { it.product.price to it.quantity })})")
                 }
             }
         }
@@ -99,9 +99,9 @@ fun CartScreen(
     if (showCheckoutInfo) {
         AlertDialog(
             onDismissRequest = { showCheckoutInfo = false },
-            confirmButton = { TextButton(onClick = { showCheckoutInfo = false }) { Text("OK") } },
-            title = { Text("Checkout coming soon") },
-            text = { Text("Delivery address, payment (e.g. mobile money or cash on delivery) and order tracking are the next milestone.") },
+            confirmButton = { TextButton(onClick = { showCheckoutInfo = false }) { Text("ሕራይ") } },
+            title = { Text("ክፍሊት ቀልጢፉ ይመጽእ") },
+            text = { Text("ኣድራሻ ምብጻሕ፡ ክፍሊት (ንኣብነት Mobile Money ወይ ኣብ ምብጻሕ ጥረ ገንዘብ) ከምኡ’ውን ምክትታል ትእዛዝ ቀጺሉ ዝመጽእ እዩ።") },
         )
     }
 }
@@ -128,7 +128,7 @@ private fun CartLine(item: CartItem, onClick: () -> Unit, onQuantityChange: (Int
                         Text("+")
                     }
                     Spacer(Modifier.weight(1f))
-                    TextButton(onClick = onRemove) { Text("Remove") }
+                    TextButton(onClick = onRemove) { Text("ኣውጽእ") }
                 }
             }
         }

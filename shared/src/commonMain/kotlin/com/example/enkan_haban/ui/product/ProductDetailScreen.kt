@@ -51,10 +51,10 @@ fun ProductDetailScreen(productId: String, onBack: () -> Unit, onGoToCart: () ->
     }
 
     Column(Modifier.fillMaxSize()) {
-        SimpleTopBar(title = "Details", onBack = onBack)
+        SimpleTopBar(title = "ዝርዝር", onBack = onBack)
         when (val s = state) {
             DetailState.Loading -> Box(Modifier.fillMaxSize(), Alignment.Center) { CircularProgressIndicator() }
-            DetailState.NotFound -> Box(Modifier.fillMaxSize(), Alignment.Center) { Text("This product is no longer available.") }
+            DetailState.NotFound -> Box(Modifier.fillMaxSize(), Alignment.Center) { Text("እዚ ኣቕሓ ድሕሪ ሕጂ የለን።") }
             is DetailState.Loaded -> ProductDetailContent(s.product, onGoToCart)
         }
     }
@@ -88,14 +88,14 @@ private fun ProductDetailContent(product: Product, onGoToCart: () -> Unit) {
                 }
                 Text("📍 ${product.location}", style = MaterialTheme.typography.bodyMedium)
                 HorizontalDivider(Modifier.padding(vertical = 8.dp))
-                Text("Description", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                Text("መግለጺ", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                 Text(product.description, style = MaterialTheme.typography.bodyMedium)
                 HorizontalDivider(Modifier.padding(vertical = 8.dp))
                 Card(Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(16.dp)) {
-                        Text("Seller", style = MaterialTheme.typography.labelMedium)
+                        Text("ሸያጢ", style = MaterialTheme.typography.labelMedium)
                         Text(
-                            product.seller.name + if (product.seller.isVerified) "  ✔ Verified" else "",
+                            product.seller.name + if (product.seller.isVerified) "  ✔ ዝተረጋገጸ" else "",
                             style = MaterialTheme.typography.titleMedium,
                         )
                     }
@@ -123,9 +123,9 @@ private fun StoreActions(product: Product, onGoToCart: () -> Unit) {
                 added = true
             },
             modifier = Modifier.weight(1f),
-        ) { Text(if (added) "Add another" else "Add to cart") }
+        ) { Text(if (added) "ካልእ ወስኽ" else "ናብ ዘንቢል ወስኽ") }
         if (added) {
-            OutlinedButton(onClick = onGoToCart, modifier = Modifier.weight(1f)) { Text("Go to cart") }
+            OutlinedButton(onClick = onGoToCart, modifier = Modifier.weight(1f)) { Text("ናብ ዘንቢል ኪድ") }
         }
     }
 }
@@ -135,10 +135,10 @@ private fun ClassifiedActions(product: Product) {
     var showContact by remember { mutableStateOf(false) }
     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         Button(onClick = { showContact = true }, modifier = Modifier.weight(1f)) {
-            Text(if (showContact) "📞 ${product.seller.phone}" else "Show contact")
+            Text(if (showContact) "📞 ${product.seller.phone}" else "ርክብ ኣርኢ")
         }
         OutlinedButton(onClick = { /* TODO: in-app chat */ }, enabled = false, modifier = Modifier.weight(1f)) {
-            Text("Chat (soon)")
+            Text("ዕላል (ቀልጢፉ)")
         }
     }
 }
