@@ -42,7 +42,7 @@ fun SellScreen(
     val errors = state.errors
 
     Column(Modifier.fillMaxSize()) {
-        SimpleTopBar(title = "ማስታወቂያ ኣእትው")
+        SimpleTopBar(title = "መዋዓውዒ ኣእትው")
         Column(
             modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -90,7 +90,7 @@ fun SellScreen(
                 onClick = { viewModel.submit(onPosted) },
                 enabled = !state.isSubmitting,
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-            ) { Text("ማስታወቂያ ለጥፍ") }
+            ) { Text("መዋዓውዒ ለጥፍ") }
         }
     }
 }

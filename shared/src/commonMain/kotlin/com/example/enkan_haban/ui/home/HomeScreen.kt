@@ -222,7 +222,7 @@ private fun HomeHeader(query: String, onQueryChange: (String) -> Unit) {
             OutlinedTextField(
                 value = query,
                 onValueChange = onQueryChange,
-                placeholder = { Text("ኣቕሑ፡ ዱኳን ወይ ማስታወቂያ ድለ…", maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                placeholder = { Text("ኣቕሑ፡ ዱኳን ወይ መዋዓውዒ ድለ…", maxLines = 1, overflow = TextOverflow.Ellipsis) },
                 leadingIcon = { Text("🔍", fontSize = 18.sp) },
                 singleLine = true,
                 shape = RoundedCornerShape(50),

@@ -175,7 +175,7 @@ fun DiscountBadge(percent: Int, modifier: Modifier = Modifier) {
 fun ListingTypeTag(type: ListingType) {
     val (label, color) = when (type) {
         ListingType.STORE -> "🏪 ዱኳን" to MaterialTheme.colorScheme.primary
-        ListingType.CLASSIFIED -> "📢 ማስታወቂያ" to Color(0xFF7A5AF8)
+        ListingType.CLASSIFIED -> "📢 መዋዓውዒ" to Color(0xFF7A5AF8)
     }
     Surface(color = color.copy(alpha = 0.12f), shape = RoundedCornerShape(50)) {
         Text(
