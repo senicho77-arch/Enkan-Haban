@@ -93,7 +93,7 @@ fun HomeScreen(
             onClick = onSellClick,
         ),
         Promo(
-            tag = "📢 ስፖንሰር · Ad",
+            tag = "📢 ስፖንሰር · መዋዓውዒ",
             title = "ባህላዊ ክዳን ሓበሻ",
             subtitle = "ብኢድ ዝተሰርሐ ጥበብ፡ ንበዓልን ንመርዓን",
             cta = "ርአ",
