@@ -1,5 +1,6 @@
 package com.example.enkan_haban.ui.components
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -31,6 +32,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
@@ -39,6 +41,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.enkan_haban.data.SampleData
 import com.example.enkan_haban.domain.ListingType
+import com.example.enkan_haban.domain.Photo
 import com.example.enkan_haban.domain.Product
 import com.example.enkan_haban.ui.theme.DealRed
 import com.example.enkan_haban.ui.theme.Gold
@@ -48,6 +51,8 @@ import com.example.enkan_haban.ui.theme.categoryColors
 import com.example.enkan_haban.util.Currency
 import com.example.enkan_haban.util.CurrencySettings
 import com.example.enkan_haban.util.formatPrice
+import org.jetbrains.compose.resources.ExperimentalResourceApi
+import org.jetbrains.compose.resources.decodeToImageBitmap
 
 /** Soft drop shadow tinted with the brand navy, used on cards and the search bar. */
 fun Modifier.softShadow(elevation: Dp = 10.dp, shape: RoundedCornerShape = RoundedCornerShape(20.dp)): Modifier =
@@ -59,6 +64,10 @@ fun Modifier.softShadow(elevation: Dp = 10.dp, shape: RoundedCornerShape = Round
  */
 @Composable
 fun ProductImage(product: Product, modifier: Modifier = Modifier, emojiSize: Int = 52) {
+    product.photos.firstOrNull()?.let { photo ->
+        PhotoImage(photo, modifier)
+        return
+    }
     val emoji = SampleData.categories.firstOrNull { it.id == product.categoryId }?.emoji ?: "📦"
     val colors = categoryColors(product.categoryId)
     Box(
@@ -265,5 +274,17 @@ fun CurrencyToggle(modifier: Modifier = Modifier, onDark: Boolean = false) {
                     .padding(horizontal = 10.dp, vertical = 6.dp),
             )
         }
+    }
+}
+
+/** Shows a photo picked on the device, cropped to fill [modifier]'s bounds. */
+@OptIn(ExperimentalResourceApi::class)
+@Composable
+fun PhotoImage(photo: Photo, modifier: Modifier = Modifier) {
+    val bitmap = remember(photo) { runCatching { photo.bytes.decodeToImageBitmap() }.getOrNull() }
+    if (bitmap != null) {
+        Image(bitmap = bitmap, contentDescription = null, contentScale = ContentScale.Crop, modifier = modifier)
+    } else {
+        Box(modifier.background(MaterialTheme.colorScheme.surfaceVariant))
     }
 }
