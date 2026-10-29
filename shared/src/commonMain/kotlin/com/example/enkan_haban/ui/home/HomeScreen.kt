@@ -1,8 +1,11 @@
 package com.example.enkan_haban.ui.home
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -22,14 +25,19 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.enkan_haban.AppContainer
+import com.example.enkan_haban.resources.Res
+import com.example.enkan_haban.resources.enkan_haban_logo
 import com.example.enkan_haban.ui.components.ProductCard
+import org.jetbrains.compose.resources.painterResource
 
 @Composable
 fun HomeScreen(
@@ -82,13 +90,23 @@ fun HomeScreen(
 private fun SearchHeader(query: String, onQueryChange: (String) -> Unit) {
     Surface(color = MaterialTheme.colorScheme.primaryContainer) {
         Column(Modifier.fillMaxWidth().statusBarsPadding().padding(12.dp)) {
-            Text(
-                "EnkanHaban",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onPrimaryContainer,
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier.padding(bottom = 8.dp),
-            )
+            ) {
+                Image(
+                    painter = painterResource(Res.drawable.enkan_haban_logo),
+                    contentDescription = "Enkan Haban logo",
+                    modifier = Modifier.size(40.dp).clip(RoundedCornerShape(8.dp)),
+                )
+                Text(
+                    "EnkanHaban",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                )
+            }
             OutlinedTextField(
                 value = query,
                 onValueChange = onQueryChange,
