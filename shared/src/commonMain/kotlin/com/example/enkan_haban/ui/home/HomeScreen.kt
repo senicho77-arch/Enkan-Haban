@@ -1,6 +1,7 @@
 package com.example.enkan_haban.ui.home
 
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -53,6 +54,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.enkan_haban.AppContainer
 import com.example.enkan_haban.domain.Category
+import com.example.enkan_haban.resources.Res
+import com.example.enkan_haban.resources.enkan_haban_logo
 import com.example.enkan_haban.ui.components.CurrencyToggle
 import com.example.enkan_haban.ui.components.ProductCard
 import com.example.enkan_haban.ui.components.SectionHeader
@@ -64,6 +67,7 @@ import com.example.enkan_haban.ui.theme.NavyDeep
 import com.example.enkan_haban.ui.theme.SkyBlue
 import com.example.enkan_haban.ui.theme.categoryColors
 import kotlinx.coroutines.delay
+import org.jetbrains.compose.resources.painterResource
 
 @Composable
 fun HomeScreen(
@@ -200,12 +204,11 @@ private fun HomeHeader(query: String, onQueryChange: (String) -> Unit) {
     ) {
         Column(Modifier.fillMaxWidth().statusBarsPadding().padding(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 20.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(
-                    Modifier.size(44.dp).clip(RoundedCornerShape(14.dp)).background(Color.White),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text("እ", fontSize = 24.sp, fontWeight = FontWeight.ExtraBold, color = SkyBlue)
-                }
+                Image(
+                    painter = painterResource(Res.drawable.enkan_haban_logo),
+                    contentDescription = "Enkan Haban logo",
+                    modifier = Modifier.size(44.dp).clip(RoundedCornerShape(14.dp)).background(Color.White),
+                )
                 Spacer(Modifier.width(12.dp))
                 Column(Modifier.weight(1f)) {
                     Text("እንካን ሃባን", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold, color = Color.White)

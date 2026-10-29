@@ -63,3 +63,7 @@ kotlin {
 dependencies {
     androidRuntimeClasspath(libs.compose.uiTooling)
 }
+compose.resources {
+    publicResClass = false
+    packageOfResClass = "com.example.enkan_haban.resources"
+}
