@@ -20,6 +20,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -43,79 +44,110 @@ import com.example.enkan_haban.ui.components.PhotoImage
 import com.example.enkan_haban.ui.components.SimpleTopBar
 import com.example.enkan_haban.util.CurrencySettings
 
-@OptIn(ExperimentalLayoutApi::class)
+/**
+ * Form for posting a new ad, or — with [editProductId] — for changing the price, photos,
+ * text and other details of the seller's own ad. [onDone] gets the product id after saving.
+ */
 @Composable
 fun SellScreen(
-    onPosted: (String) -> Unit,
-    viewModel: SellViewModel = viewModel { SellViewModel(AppContainer.productRepository, AppContainer.currentUser) },
+    onDone: (String) -> Unit,
+    editProductId: String? = null,
+    /** Keeps the edit form apart from the new-ad form (and from earlier edits). */
+    formKey: String = "new",
+    onBack: (() -> Unit)? = null,
+    viewModel: SellViewModel = viewModel(key = formKey) {
+        SellViewModel(AppContainer.productRepository, AppContainer.currentUser, editProductId)
+    },
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    val form = state.form
-    val errors = state.errors
     val openPicker = rememberPhotoPicker(onPicked = viewModel::addPhotos)
+    val isEditing = editProductId != null
 
     Column(Modifier.fillMaxSize()) {
-        SimpleTopBar(title = "መዋዓውዒ ኣእትው")
-        Column(
-            modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            SectionLabel("ፎቶታት (${form.photos.size}/$MAX_PHOTOS)", errors["photos"])
-            PhotoStrip(
-                photos = form.photos,
-                canAddMore = state.photoSlotsLeft > 0,
-                onAdd = { openPicker(state.photoSlotsLeft) },
-                onRemove = viewModel::removePhoto,
-            )
-            state.photoMessage?.let {
-                Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
-            }
-
-            FormField("ኣርእስቲ", form.title, errors["title"]) { v -> viewModel.update { it.copy(title = v) } }
-            FormField("መግለጺ", form.description, errors["description"], singleLine = false) { v ->
-                viewModel.update { it.copy(description = v) }
-            }
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("ገንዘብ ዋጋ", style = MaterialTheme.typography.labelLarge, modifier = Modifier.weight(1f))
-                CurrencyToggle()
-            }
-            FormField("ዋጋ (${CurrencySettings.current.code})", form.price, errors["price"], keyboardType = KeyboardType.Decimal) { v ->
-                viewModel.update { it.copy(price = v) }
-            }
-
-            SectionLabel("ዓይነት", errors["category"])
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                viewModel.categories.forEach { category ->
-                    FilterChip(
-                        selected = form.categoryId == category.id,
-                        onClick = { viewModel.update { it.copy(categoryId = category.id) } },
-                        label = { Text("${category.emoji} ${category.localName}") },
-                    )
-                }
-            }
-
-            SectionLabel("ኩነታት", null)
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Condition.entries.forEach { condition ->
-                    FilterChip(
-                        selected = form.condition == condition,
-                        onClick = { viewModel.update { it.copy(condition = condition) } },
-                        label = { Text(condition.label) },
-                    )
-                }
-            }
-
-            FormField("ቦታ (ከተማ፡ ከባቢ)", form.location, errors["location"]) { v -> viewModel.update { it.copy(location = v) } }
-            FormField("ቁጽሪ ተሌፎን", form.phone, errors["phone"], keyboardType = KeyboardType.Phone) { v ->
-                viewModel.update { it.copy(phone = v) }
-            }
-
-            Button(
-                onClick = { viewModel.submit(onPosted) },
-                enabled = !state.isSubmitting,
-                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-            ) { Text("መዋዓውዒ ለጥፍ") }
+        SimpleTopBar(title = if (isEditing) "መዋዓውዒ ኣመሓይሽ" else "መዋዓውዒ ኣእትው", onBack = onBack)
+        val loadError = state.loadError
+        when {
+            state.isLoading -> Box(Modifier.fillMaxSize(), Alignment.Center) { CircularProgressIndicator() }
+            isEditing && state.editing == null && loadError != null ->
+                Box(Modifier.fillMaxSize().padding(16.dp), Alignment.Center) { Text(loadError) }
+            else -> SellFormContent(state, viewModel, isEditing, openPicker, onDone)
         }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun SellFormContent(
+    state: SellUiState,
+    viewModel: SellViewModel,
+    isEditing: Boolean,
+    openPicker: (maxItems: Int) -> Unit,
+    onDone: (String) -> Unit,
+) {
+    val form = state.form
+    val errors = state.errors
+    Column(
+        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        SectionLabel("ፎቶታት (${form.photos.size}/$MAX_PHOTOS)", errors["photos"])
+        PhotoStrip(
+            photos = form.photos,
+            canAddMore = state.photoSlotsLeft > 0,
+            onAdd = { openPicker(state.photoSlotsLeft) },
+            onRemove = viewModel::removePhoto,
+        )
+        state.photoMessage?.let {
+            Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+        }
+
+        FormField("ኣርእስቲ", form.title, errors["title"]) { v -> viewModel.update { it.copy(title = v) } }
+        FormField("መግለጺ", form.description, errors["description"], singleLine = false) { v ->
+            viewModel.update { it.copy(description = v) }
+        }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("ገንዘብ ዋጋ", style = MaterialTheme.typography.labelLarge, modifier = Modifier.weight(1f))
+            CurrencyToggle()
+        }
+        FormField("ዋጋ (${CurrencySettings.current.code})", form.price, errors["price"], keyboardType = KeyboardType.Decimal) { v ->
+            viewModel.update { it.copy(price = v) }
+        }
+
+        SectionLabel("ዓይነት", errors["category"])
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            viewModel.categories.forEach { category ->
+                FilterChip(
+                    selected = form.categoryId == category.id,
+                    onClick = { viewModel.update { it.copy(categoryId = category.id) } },
+                    label = { Text("${category.emoji} ${category.localName}") },
+                )
+            }
+        }
+
+        SectionLabel("ኩነታት", null)
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Condition.entries.forEach { condition ->
+                FilterChip(
+                    selected = form.condition == condition,
+                    onClick = { viewModel.update { it.copy(condition = condition) } },
+                    label = { Text(condition.label) },
+                )
+            }
+        }
+
+        FormField("ቦታ (ከተማ፡ ከባቢ)", form.location, errors["location"]) { v -> viewModel.update { it.copy(location = v) } }
+        FormField("ቁጽሪ ተሌፎን", form.phone, errors["phone"], keyboardType = KeyboardType.Phone) { v ->
+            viewModel.update { it.copy(phone = v) }
+        }
+
+        state.loadError?.let {
+            Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
+        }
+        Button(
+            onClick = { viewModel.submit(onDone) },
+            enabled = !state.isSubmitting,
+            modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+        ) { Text(if (isEditing) "ለውጢ ዓቅብ" else "መዋዓውዒ ለጥፍ") }
     }
 }
 

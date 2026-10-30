@@ -17,6 +17,12 @@ interface ProductRepository {
     fun observeProducts(): Flow<List<Product>>
     suspend fun getProduct(id: String): Product?
     suspend fun createListing(draft: ListingDraft, seller: Seller): Product
+
+    /**
+     * Replaces the title, description, price, photos and other fields of ad [id] with [draft].
+     * Returns the updated product, or null if it doesn't exist or [seller] may not edit it.
+     */
+    suspend fun updateListing(id: String, draft: ListingDraft, seller: Seller): Product?
 }
 
 class InMemoryProductRepository(
@@ -46,6 +52,22 @@ class InMemoryProductRepository(
         )
         products.update { listOf(product) + it }
         return product
+    }
+
+    override suspend fun updateListing(id: String, draft: ListingDraft, seller: Seller): Product? {
+        val existing = getProduct(id)?.takeIf { it.isEditableBy(seller) } ?: return null
+        val updated = existing.copy(
+            title = draft.title,
+            description = draft.description,
+            price = draft.price,
+            categoryId = draft.categoryId,
+            condition = draft.condition,
+            location = draft.location,
+            seller = existing.seller.copy(phone = draft.phone),
+            photos = draft.photos,
+        )
+        products.update { list -> list.map { if (it.id == id) updated else it } }
+        return updated
     }
 }
 

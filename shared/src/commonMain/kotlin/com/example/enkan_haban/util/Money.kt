@@ -87,5 +87,12 @@ fun parsePrice(input: String, currency: Currency = CurrencySettings.current): Lo
     return (value / currency.unitsPerUsd * 100).roundToLong()
 }
 
+/**
+ * The amount as a seller would type it, without the symbol: "1,394,600" or "12.05".
+ * Used to pre-fill the price field when an ad is edited; [parsePrice] reads it back.
+ */
+fun formatPriceInput(usdCents: Long, currency: Currency = CurrencySettings.current): String =
+    formatPrice(usdCents, currency).removePrefix(currency.symbol)
+
 private fun groupThousands(value: Long): String =
     value.toString().reversed().chunked(3).joinToString(",").reversed()

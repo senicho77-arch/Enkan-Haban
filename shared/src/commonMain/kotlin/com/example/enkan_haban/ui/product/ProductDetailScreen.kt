@@ -21,7 +21,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -29,6 +28,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.enkan_haban.AppContainer
 import com.example.enkan_haban.domain.ListingType
 import com.example.enkan_haban.domain.Product
@@ -45,9 +45,13 @@ private sealed interface DetailState {
 }
 
 @Composable
-fun ProductDetailScreen(productId: String, onBack: () -> Unit, onGoToCart: () -> Unit) {
-    val state by produceState<DetailState>(DetailState.Loading, productId) {
-        value = AppContainer.productRepository.getProduct(productId)?.let { DetailState.Loaded(it) } ?: DetailState.NotFound
+fun ProductDetailScreen(productId: String, onBack: () -> Unit, onGoToCart: () -> Unit, onEdit: () -> Unit) {
+    // Observed rather than loaded once, so the page shows the seller's edits on return.
+    val products by remember { AppContainer.productRepository.observeProducts() }
+        .collectAsStateWithLifecycle(initialValue = null)
+    val state = when (val list = products) {
+        null -> DetailState.Loading
+        else -> list.firstOrNull { it.id == productId }?.let { DetailState.Loaded(it) } ?: DetailState.NotFound
     }
 
     Column(Modifier.fillMaxSize()) {
@@ -55,13 +59,13 @@ fun ProductDetailScreen(productId: String, onBack: () -> Unit, onGoToCart: () ->
         when (val s = state) {
             DetailState.Loading -> Box(Modifier.fillMaxSize(), Alignment.Center) { CircularProgressIndicator() }
             DetailState.NotFound -> Box(Modifier.fillMaxSize(), Alignment.Center) { Text("እዚ ኣቕሓ ድሕሪ ሕጂ የለን።") }
-            is DetailState.Loaded -> ProductDetailContent(s.product, onGoToCart)
+            is DetailState.Loaded -> ProductDetailContent(s.product, onGoToCart, onEdit)
         }
     }
 }
 
 @Composable
-private fun ProductDetailContent(product: Product, onGoToCart: () -> Unit) {
+private fun ProductDetailContent(product: Product, onGoToCart: () -> Unit, onEdit: () -> Unit) {
     Column(Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier.weight(1f).verticalScroll(rememberScrollState()),
@@ -104,13 +108,20 @@ private fun ProductDetailContent(product: Product, onGoToCart: () -> Unit) {
         }
         Surface(tonalElevation = 3.dp, shadowElevation = 8.dp) {
             Box(Modifier.fillMaxWidth().padding(16.dp)) {
-                when (product.listingType) {
-                    ListingType.STORE -> StoreActions(product, onGoToCart)
-                    ListingType.CLASSIFIED -> ClassifiedActions(product)
+                when {
+                    product.isEditableBy(AppContainer.currentUser) -> OwnerActions(onEdit)
+                    product.listingType == ListingType.STORE -> StoreActions(product, onGoToCart)
+                    else -> ClassifiedActions(product)
                 }
             }
         }
     }
+}
+
+/** Shown to the seller on their own ad instead of the buyer actions. */
+@Composable
+private fun OwnerActions(onEdit: () -> Unit) {
+    Button(onClick = onEdit, modifier = Modifier.fillMaxWidth()) { Text("✏️  ዋጋ፡ ስእሊ ወይ ጽሑፍ ኣመሓይሽ") }
 }
 
 @Composable

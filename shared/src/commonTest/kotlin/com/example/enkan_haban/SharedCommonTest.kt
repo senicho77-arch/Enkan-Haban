@@ -1,26 +1,38 @@
 package com.example.enkan_haban
 
 import com.example.enkan_haban.data.CartRepository
+import com.example.enkan_haban.data.InMemoryProductRepository
 import com.example.enkan_haban.data.SampleData
 import com.example.enkan_haban.data.filterProducts
 import com.example.enkan_haban.data.itemCount
 import com.example.enkan_haban.data.subtotal
+import com.example.enkan_haban.domain.Condition
+import com.example.enkan_haban.domain.ListingDraft
 import com.example.enkan_haban.domain.ListingType
+import com.example.enkan_haban.domain.Seller
 import com.example.enkan_haban.ui.navigation.Navigator
 import com.example.enkan_haban.ui.navigation.Route
 import com.example.enkan_haban.domain.Photo
 import com.example.enkan_haban.ui.sell.MAX_PHOTOS
+import com.example.enkan_haban.ui.sell.EditTarget
 import com.example.enkan_haban.ui.sell.SellForm
+import com.example.enkan_haban.ui.sell.resolvePrice
+import com.example.enkan_haban.ui.sell.toSellForm
 import com.example.enkan_haban.ui.sell.mergePhotos
 import com.example.enkan_haban.ui.sell.validate
 import com.example.enkan_haban.util.Currency
 import com.example.enkan_haban.util.formatPrice
+import com.example.enkan_haban.util.formatPriceInput
 import com.example.enkan_haban.util.formatTotal
 import com.example.enkan_haban.util.parsePrice
+import kotlin.coroutines.Continuation
+import kotlin.coroutines.EmptyCoroutineContext
+import kotlin.coroutines.startCoroutine
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -159,5 +171,84 @@ class NavigatorTest {
         assertTrue(navigator.goBack())
         assertEquals(Route.Home, navigator.current)
         assertFalse(navigator.goBack())
+    }
+}
+
+/** Runs a suspend block that never actually suspends, like the in-memory repository. */
+private fun <T> runNow(block: suspend () -> T): T {
+    var result: Result<T>? = null
+    block.startCoroutine(Continuation(EmptyCoroutineContext) { result = it })
+    return result!!.getOrThrow()
+}
+
+class EditListingTest {
+    private val me = Seller(id = "me", name = "You", phone = "")
+    private val someoneElse = Seller(id = "other", name = "Other", phone = "")
+
+    private fun draft(title: String = "Used bicycle", price: Long = 4_500) = ListingDraft(
+        title = title,
+        description = "Good condition",
+        price = price,
+        categoryId = "vehicles",
+        condition = Condition.USED,
+        location = "Kampala",
+        phone = "+256 700 000 000",
+        photos = listOf(Photo(byteArrayOf(1))),
+    )
+
+    @Test
+    fun sellerCanChangePriceTextAndPhotosOfOwnAd() {
+        val repo = InMemoryProductRepository()
+        val posted = runNow { repo.createListing(draft(), me) }
+        val newPhotos = listOf(Photo(byteArrayOf(2)), Photo(byteArrayOf(3)))
+
+        val updated = runNow {
+            repo.updateListing(posted.id, draft(title = "Blue bicycle", price = 3_000).copy(photos = newPhotos), me)
+        }
+
+        assertNotNull(updated)
+        assertEquals(posted.id, updated.id)
+        assertEquals("Blue bicycle", updated.title)
+        assertEquals(3_000L, updated.price)
+        assertEquals(newPhotos, updated.photos)
+        assertEquals(updated, runNow { repo.getProduct(posted.id) })
+        assertEquals(1, repo.observeProducts().value.count { it.id == posted.id })
+    }
+
+    @Test
+    fun othersCannotEditAnAd() {
+        val repo = InMemoryProductRepository()
+        val posted = runNow { repo.createListing(draft(), me) }
+        assertNull(runNow { repo.updateListing(posted.id, draft(title = "Stolen"), someoneElse) })
+        assertEquals("Used bicycle", runNow { repo.getProduct(posted.id) }!!.title)
+        assertNull(runNow { repo.updateListing("missing", draft(), me) })
+    }
+
+    @Test
+    fun storeItemsAreNotEditableAsAds() {
+        val store = SampleData.products.first { it.listingType == ListingType.STORE }
+        assertFalse(store.isEditableBy(store.seller))
+    }
+
+    @Test
+    fun formIsPrefilledWithAdValues() {
+        val repo = InMemoryProductRepository()
+        val posted = runNow { repo.createListing(draft(price = 38_000), me) }
+        val form = posted.toSellForm(Currency.UGX)
+        assertEquals("Used bicycle", form.title)
+        assertEquals("1,394,600", form.price)
+        assertEquals("+256 700 000 000", form.phone)
+        assertEquals(posted.photos, form.photos)
+        assertTrue(validate(form).isEmpty())
+    }
+
+    @Test
+    fun untouchedPriceKeepsStoredAmount() {
+        // 1,205 cents shows as UGX 44,200, which parses back to 1,204 cents.
+        val text = formatPriceInput(1_205, Currency.UGX)
+        val editing = EditTarget("p", price = 1_205, priceText = text, currency = Currency.UGX)
+        assertEquals(1_205L, resolvePrice(SellForm(price = text), editing, Currency.UGX))
+        assertEquals(parsePrice("50,000", Currency.UGX), resolvePrice(SellForm(price = "50,000"), editing, Currency.UGX))
+        assertEquals(parsePrice(text, Currency.UGX), resolvePrice(SellForm(price = text), null, Currency.UGX))
     }
 }

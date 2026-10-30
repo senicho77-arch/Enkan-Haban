@@ -13,6 +13,16 @@ sealed interface Route {
     data object Account : Tab
 
     data class ProductDetail(val productId: String) : Route
+
+    /**
+     * The seller editing their own ad. [visit] differs on every open, so each visit gets a
+     * fresh form instead of unsaved edits left over from the last one.
+     */
+    data class EditListing(val productId: String, val visit: Int = nextVisit++) : Route
+
+    private companion object {
+        var nextVisit = 0
+    }
 }
 
 /** Minimal back-stack navigator. Home is always the root. */
