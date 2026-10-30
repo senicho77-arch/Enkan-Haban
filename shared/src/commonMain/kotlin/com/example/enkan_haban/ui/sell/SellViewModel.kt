@@ -6,7 +6,11 @@ import com.example.enkan_haban.data.ProductRepository
 import com.example.enkan_haban.domain.Condition
 import com.example.enkan_haban.domain.ListingDraft
 import com.example.enkan_haban.domain.Photo
+import com.example.enkan_haban.domain.Product
 import com.example.enkan_haban.domain.Seller
+import com.example.enkan_haban.util.Currency
+import com.example.enkan_haban.util.CurrencySettings
+import com.example.enkan_haban.util.formatPriceInput
 import com.example.enkan_haban.util.parsePrice
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -25,8 +29,40 @@ data class SellForm(
     val photos: List<Photo> = emptyList(),
 )
 
+/** Fills the form with an existing ad's values, the price written in [currency]. */
+fun Product.toSellForm(currency: Currency = CurrencySettings.current) = SellForm(
+    title = title,
+    description = description,
+    price = formatPriceInput(price, currency),
+    categoryId = categoryId,
+    condition = condition,
+    location = location,
+    phone = seller.phone,
+    photos = photos,
+)
+
+/**
+ * The ad being edited. The original price is kept so an untouched price field saves the
+ * exact stored amount, instead of drifting by the rounding of the shilling conversion.
+ */
+data class EditTarget(val productId: String, val price: Long, val priceText: String, val currency: Currency)
+
+/** The price to save: the original one if the seller didn't change the field, else what they typed. */
+fun resolvePrice(form: SellForm, editing: EditTarget?, currency: Currency = CurrencySettings.current): Long? =
+    if (editing != null && form.price == editing.priceText && currency == editing.currency) {
+        editing.price
+    } else {
+        parsePrice(form.price, currency)
+    }
+
 data class SellUiState(
     val form: SellForm = SellForm(),
+    /** Set when editing an existing ad instead of posting a new one. */
+    val editing: EditTarget? = null,
+    /** True while the ad to edit is loading. */
+    val isLoading: Boolean = false,
+    /** Set when the ad to edit is gone or belongs to someone else. */
+    val loadError: String? = null,
     val errors: Map<String, String> = emptyMap(),
     val isSubmitting: Boolean = false,
     /** Shown under the photos, e.g. when some picked photos didn't fit. */
@@ -56,12 +92,29 @@ fun validate(form: SellForm): Map<String, String> = buildMap {
     if (form.photos.size > MAX_PHOTOS) put("photos", "ክሳብ $MAX_PHOTOS ፎቶታት ጥራይ ክትውስኽ ትኽእል")
 }
 
+/** Posts a new ad, or — with [editProductId] — edits the seller's existing one. */
 class SellViewModel(
     private val repository: ProductRepository,
     private val seller: Seller,
+    private val editProductId: String? = null,
 ) : ViewModel() {
-    private val _uiState = MutableStateFlow(SellUiState())
+    private val _uiState = MutableStateFlow(SellUiState(isLoading = editProductId != null))
     val uiState: StateFlow<SellUiState> = _uiState.asStateFlow()
+
+    init {
+        if (editProductId != null) {
+            viewModelScope.launch {
+                val product = repository.getProduct(editProductId)?.takeIf { it.isEditableBy(seller) }
+                _uiState.value = if (product == null) {
+                    SellUiState(loadError = "እዚ ኣቕሓ ክመሓየሽ ኣይክእልን")
+                } else {
+                    val currency = CurrencySettings.current
+                    val form = product.toSellForm(currency)
+                    SellUiState(form = form, editing = EditTarget(product.id, product.price, form.price, currency))
+                }
+            }
+        }
+    }
 
     val categories get() = repository.categories
 
@@ -91,9 +144,13 @@ class SellViewModel(
         }
     }
 
-    /** Validates and posts the ad, then calls [onPosted] with the new product id. */
-    fun submit(onPosted: (String) -> Unit) {
-        val form = _uiState.value.form
+    /**
+     * Validates and posts the ad — or saves the changes when editing — then calls [onDone]
+     * with the product id.
+     */
+    fun submit(onDone: (String) -> Unit) {
+        val state = _uiState.value
+        val form = state.form
         val errors = validate(form)
         if (errors.isNotEmpty()) {
             _uiState.update { it.copy(errors = errors) }
@@ -101,21 +158,30 @@ class SellViewModel(
         }
         _uiState.update { it.copy(isSubmitting = true) }
         viewModelScope.launch {
-            val product = repository.createListing(
-                ListingDraft(
-                    title = form.title.trim(),
-                    description = form.description.trim(),
-                    price = parsePrice(form.price)!!,
-                    categoryId = form.categoryId!!,
-                    condition = form.condition,
-                    location = form.location.trim(),
-                    phone = form.phone.trim(),
-                    photos = form.photos,
-                ),
-                seller,
+            val draft = ListingDraft(
+                title = form.title.trim(),
+                description = form.description.trim(),
+                price = resolvePrice(form, state.editing)!!,
+                categoryId = form.categoryId!!,
+                condition = form.condition,
+                location = form.location.trim(),
+                phone = form.phone.trim(),
+                photos = form.photos,
             )
-            _uiState.value = SellUiState()
-            onPosted(product.id)
+            val editing = state.editing
+            if (editing == null) {
+                val product = repository.createListing(draft, seller)
+                _uiState.value = SellUiState()
+                onDone(product.id)
+            } else {
+                val product = repository.updateListing(editing.productId, draft, seller)
+                if (product == null) {
+                    _uiState.update { it.copy(isSubmitting = false, loadError = "ለውጢ ኣይተዓቀበን — እዚ ኣቕሓ የለን") }
+                } else {
+                    _uiState.update { it.copy(isSubmitting = false) }
+                    onDone(product.id)
+                }
+            }
         }
     }
 }

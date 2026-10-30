@@ -26,7 +26,7 @@ fun AccountScreen() {
             Card(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text("እንቋዕ ናብ እንካን ሃባን ብደሓን መጻእኩም", style = MaterialTheme.typography.titleMedium)
-                    Text("ትእዛዛትካ ንምክትታል፡ መዋዓውዒታትካ ንምምሕዳርን ምስ ሸየጥቲ ንምዝራብን እቶ።")
+                    Text("ትእዛዛትካ ንምክትታል፡ ዝሸጥካዮም ኣቕሑ ንምምሕዳርን ምስ ሸየጥቲ ንምዝራብን እቶ።")
                     Button(onClick = { /* TODO: authentication */ }, enabled = false) { Text("እቶ (ቀልጢፉ ይመጽእ)") }
                 }
             }
@@ -38,7 +38,7 @@ fun AccountScreen() {
                 )
             }
             Card(Modifier.fillMaxWidth()) {
-                listOf("📦  ትእዛዛተይ", "📢  መዋዓውዒታተይ", "❤️  ዝዓቀብክዎም", "⚙️  ምድላዋት").forEachIndexed { index, label ->
+                listOf("📦  ትእዛዛተይ", "🏷️  ኣቕሑተይ", "❤️  ዝዓቀብክዎም", "⚙️  ምድላዋት").forEachIndexed { index, label ->
                     if (index > 0) HorizontalDivider()
                     ListItem(headlineContent = { Text(label) })
                 }
