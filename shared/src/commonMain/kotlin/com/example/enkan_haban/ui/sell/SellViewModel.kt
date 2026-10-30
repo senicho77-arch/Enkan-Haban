@@ -106,7 +106,7 @@ class SellViewModel(
             viewModelScope.launch {
                 val product = repository.getProduct(editProductId)?.takeIf { it.isEditableBy(seller) }
                 _uiState.value = if (product == null) {
-                    SellUiState(loadError = "እዚ መዋዓውዒ ክመሓየሽ ኣይክእልን")
+                    SellUiState(loadError = "እዚ ኣቕሓ ክመሓየሽ ኣይክእልን")
                 } else {
                     val currency = CurrencySettings.current
                     val form = product.toSellForm(currency)
@@ -176,7 +176,7 @@ class SellViewModel(
             } else {
                 val product = repository.updateListing(editing.productId, draft, seller)
                 if (product == null) {
-                    _uiState.update { it.copy(isSubmitting = false, loadError = "ለውጢ ኣይተዓቀበን — እዚ መዋዓውዒ የለን") }
+                    _uiState.update { it.copy(isSubmitting = false, loadError = "ለውጢ ኣይተዓቀበን — እዚ ኣቕሓ የለን") }
                 } else {
                     _uiState.update { it.copy(isSubmitting = false) }
                     onDone(product.id)

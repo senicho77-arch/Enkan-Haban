@@ -64,7 +64,7 @@ fun SellScreen(
     val isEditing = editProductId != null
 
     Column(Modifier.fillMaxSize()) {
-        SimpleTopBar(title = if (isEditing) "መዋዓውዒ ኣመሓይሽ" else "መዋዓውዒ ኣእትው", onBack = onBack)
+        SimpleTopBar(title = if (isEditing) "ኣቕሓ ኣመሓይሽ" else "ኣቕሓ ንሽያጥ ኣእትው", onBack = onBack)
         val loadError = state.loadError
         when {
             state.isLoading -> Box(Modifier.fillMaxSize(), Alignment.Center) { CircularProgressIndicator() }
@@ -147,7 +147,7 @@ private fun SellFormContent(
             onClick = { viewModel.submit(onDone) },
             enabled = !state.isSubmitting,
             modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-        ) { Text(if (isEditing) "ለውጢ ዓቅብ" else "መዋዓውዒ ለጥፍ") }
+        ) { Text(if (isEditing) "ለውጢ ዓቅብ" else "ኣቕሓ ለጥፍ") }
     }
 }
 
