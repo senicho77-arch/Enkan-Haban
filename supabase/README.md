@@ -7,7 +7,8 @@
 | `migrations/20261027000100_storage.sql` | ስእልታት ንብረት ዝቕመጣሉ ቦታ (`listing-images`) |
 | `migrations/20261027000200_reference_data.sql` | ባጤራታት (UGX, ETB, ERN, USD, EUR…) ን ምድብታት ብትግርኛን እንግሊዝኛን |
 | `migrations/20261028000000_hardening.sql` | ውሕስነት ምድልዳል — security fixes found by testing (see below) |
-| `tests/` | 47 tests that act as real users (`tests/run.sh`) |
+| `migrations/20261031000000_admin_listing_order.sql` | ኣድሚን መስርዕ ፖስትታት ኣብ ነፍሲ ወከፍ ምድብ ይውስን — admin-controlled listing order per category |
+| `tests/` | 80 tests that act as real users (`tests/run.sh`) |
 
 ## ሰሌዳታት (tables)
 - **profiles** — ተጠቀምቲ (ብ Google ምስ ኣተዉ ባዕሉ ይፍጠር)
@@ -17,11 +18,12 @@
 - **favorites** · **conversations / messages** — ዕላል ዓዳግን ሻያጥን
 - **reviews** — ርእይቶ ሻያጢ · **reports** — ጸብጻብ ምትላል
 - **currencies** — ባጤራታት
+- **admins** — ኣድሚናት (ካብ ኣፕ ክንበብ ወይ ክቕየር ኣይክእልን) · **category_placements** — መስርዕ ፖስትታት ብኣድሚን
 
 ## ከመይ ትጥቀመሉ
 1. ኣብ https://supabase.com ሓድሽ project ክፈት።
 2. **Authentication → Providers → Google** ኣበርክቶ (Google Client ID/Secret ካብ Google Cloud)።
-3. **SQL Editor** ክፈት፣ ነቶም ኣርባዕተ ፋይላት ብቕደም ስዕቦም (000000 → 000100 → 000200 → 20261028000000) ለጢፍካ **Run** በል።
+3. **SQL Editor** ክፈት፣ ነቶም ፋይላት ብቕደም ስዕቦም (000000 → 000100 → 000200 → 20261028000000 → 20261031000000) ለጢፍካ **Run** በል።
    ወይ ብ Supabase CLI: `supabase link` ድሕሪኡ `supabase db push`።
 
 ## ውሕስነት (ዝተፈተነ)
@@ -35,10 +37,33 @@
 - Orders only move forward (pending → confirmed → shipped → delivered); cancelling restores stock.
 - One review per buyer per seller per listing, and only after a chat or an order.
 
+## ኣድሚን / Admins and the listing order
+ቀዳማይ ኣድሚን (ንስኻ/ንስኺ) ብ SQL Editor ጥራይ ይውሰኽ — ካብ ኣፕ ኣይከኣልን።
+The first admin is added by the owner in the Supabase **SQL Editor** (sign in to the app once with Google first,
+then copy your user id from **Authentication → Users**):
+```sql
+insert into public.admins (user_id) values ('<owner auth user id>');
+```
+ኣድሚን ኣብ ነፍሲ ወከፍ ምድብ ፖስትታት ብዝደለዮ መስርዕ ይሰርዕ። ዝተሰርዑ ቀዲሞም ይርኣዩ፡ ካልኦት ድሕሪኦም ብሓድሽ-ቅድሚት።
+- Every category (top and sub-category) has its own order; `'all'` is the home feed with no category.
+- Placed listings come first (position 1, 2, 3 …), all others follow newest first.
+- `pinned_until` (optional): after that time the placement is ignored automatically — no cron job.
+- Placements of listings that are sold, paused, removed or moved to another category are ignored.
+- With a search text, relevance wins; the admin order is only a tiebreaker.
+- Only admins can change placements. Normal users can't read `admins` and every `admin_*` call fails for them.
+
+| Need (admin only) | Call |
+|---|---|
+| Am I admin? | `rpc("is_admin")` |
+| Replace a category's whole order | `rpc("admin_set_category_order", p_category_id, p_listing_ids)` — empty array clears it; keeps existing `pinned_until` |
+| Put one listing at a position | `rpc("admin_pin_listing", p_category_id, p_listing_id, p_position = 1, p_pinned_until = null)` |
+| Take one listing out | `rpc("admin_unpin_listing", p_category_id, p_listing_id)` |
+| Show the order (admin screen) | `rpc("admin_get_category_order", p_category_id)` → id, title, position, pinned_until, is_expired |
+
 ## ንኣፕ / Notes for the app
 | Need | Call |
 |---|---|
-| Feed / search | `rpc("search_listings", q, p_category_id, p_country, p_city, p_type, p_limit, p_offset)` |
+| Feed / search | `rpc("search_listings", q, p_category_id, p_country, p_city, p_type, p_limit, p_offset)` — admin order first when browsing |
 | Own profile (incl. phone, settings) | `rpc("get_my_profile")` — `profiles` itself only shows the public card, so select columns explicitly (`id, full_name, avatar_url, country_code, city, is_verified, created_at`), not `*` |
 | Checkout | `rpc("place_order", …)` — one call per store in the cart |
 | Buyer cancels (while pending) | `rpc("cancel_order", p_order_id)` |

@@ -12,14 +12,18 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.enkan_haban.AppContainer
 import com.example.enkan_haban.ui.components.CurrencyToggle
 import com.example.enkan_haban.ui.components.SimpleTopBar
 import com.example.enkan_haban.util.CurrencySettings
 
 @Composable
-fun AccountScreen() {
+fun AccountScreen(onAdminOrderClick: () -> Unit = {}) {
+    val isAdmin by AppContainer.adminRepository.isAdmin.collectAsStateWithLifecycle()
     Column(Modifier.fillMaxSize()) {
         SimpleTopBar(title = "ኣካውንት")
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -41,6 +45,14 @@ fun AccountScreen() {
                 listOf("📦  ትእዛዛተይ", "📢  መዋዓውዒታተይ", "❤️  ዝዓቀብክዎም", "⚙️  ምድላዋት").forEachIndexed { index, label ->
                     if (index > 0) HorizontalDivider()
                     ListItem(headlineContent = { Text(label) })
+                }
+            }
+            if (isAdmin) {
+                Card(onClick = onAdminOrderClick, modifier = Modifier.fillMaxWidth()) {
+                    ListItem(
+                        headlineContent = { Text("🛠️  ምሕደራ መስርዕ") },
+                        supportingContent = { Text("ኣብ ነፍሲ ወከፍ ዓይነት መስርዕ ፖስትታት ወስን") },
+                    )
                 }
             }
         }

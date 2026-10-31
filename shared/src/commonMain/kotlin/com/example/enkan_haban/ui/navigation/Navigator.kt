@@ -13,6 +13,9 @@ sealed interface Route {
     data object Account : Tab
 
     data class ProductDetail(val productId: String) : Route
+
+    /** Admin only: hand-made order of posts per category. */
+    data object AdminOrder : Route
 }
 
 /** Minimal back-stack navigator. Home is always the root. */

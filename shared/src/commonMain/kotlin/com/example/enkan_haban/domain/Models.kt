@@ -43,6 +43,8 @@ data class Product(
     val rating: Double? = null,
     val imageUrls: List<String> = emptyList(),
     val photos: List<Photo> = emptyList(),
+    /** When the ad was posted; sample data keeps 0 and relies on list order (newest first). */
+    val createdAtEpochMs: Long = 0,
 ) {
     val discountPercent: Int?
         get() = oldPrice?.takeIf { it > price }?.let { ((it - price) * 100 / it).toInt() }
@@ -72,3 +74,19 @@ data class ListingDraft(
  * Compared by identity, so the same picture picked twice is two separate photos.
  */
 class Photo(val bytes: ByteArray)
+
+/** Reserved category key for the home feed with no category selected. */
+const val ALL_CATEGORIES = "all"
+
+/**
+ * An admin's hand-made position of [productId] inside one category ([categoryKey], or
+ * [ALL_CATEGORIES]). Position 1 is shown first. After [pinnedUntilEpochMs] it is ignored.
+ */
+data class Placement(
+    val categoryKey: String,
+    val productId: String,
+    val position: Int,
+    val pinnedUntilEpochMs: Long? = null,
+) {
+    fun isExpired(nowMs: Long): Boolean = pinnedUntilEpochMs != null && pinnedUntilEpochMs <= nowMs
+}

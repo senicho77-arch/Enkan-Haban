@@ -20,6 +20,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.enkan_haban.data.itemCount
 import com.example.enkan_haban.ui.account.AccountScreen
+import com.example.enkan_haban.ui.admin.AdminOrderScreen
 import com.example.enkan_haban.ui.cart.CartScreen
 import com.example.enkan_haban.ui.home.HomeScreen
 import com.example.enkan_haban.ui.navigation.Navigator
@@ -82,7 +83,8 @@ fun App(navigator: Navigator = AppContainer.navigator) {
                         onProductClick = { navigator.navigate(Route.ProductDetail(it)) },
                         onContinueShopping = { navigator.selectTab(Route.Home) },
                     )
-                    Route.Account -> AccountScreen()
+                    Route.Account -> AccountScreen(onAdminOrderClick = { navigator.navigate(Route.AdminOrder) })
+                    Route.AdminOrder -> AdminOrderScreen(onBack = { navigator.goBack() })
                     is Route.ProductDetail -> ProductDetailScreen(
                         productId = route.productId,
                         onBack = { navigator.goBack() },

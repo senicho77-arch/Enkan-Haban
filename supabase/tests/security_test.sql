@@ -122,6 +122,90 @@ select t.fails(format($$insert into listing_images (listing_id, storage_path) va
 insert into listing_images (listing_id, storage_path) values (:'phone', '00000000-0000-0000-0000-00000000000a/' || :'phone' || '/0.jpg');
 select t.ok(true, 'seller attaches image from own folder');
 
+-- Admin listing order per category
+reset role;
+create function t.feed(p_category text, q text default null) returns uuid[] language sql as $$
+  select array_agg(s.id order by s.ordinality) from search_listings(q => q, p_category_id => p_category, p_country => 'ER') with ordinality s $$;
+insert into auth.users (id) values ('00000000-0000-0000-0000-00000000000d');
+insert into admins (user_id) values ('00000000-0000-0000-0000-00000000000d');
+insert into listings (seller_id, category_id, listing_type, title, description, price_minor, currency, country_code, city, created_at) values
+  ('00000000-0000-0000-0000-00000000000a', 'phones-smartphones', 'classified', 'Ordered Phone One', '', 100, 'ERN', 'ER', 'Asmara', now() - interval '5 days') returning id as s1 \gset
+insert into listings (seller_id, category_id, listing_type, title, description, price_minor, currency, country_code, city, created_at) values
+  ('00000000-0000-0000-0000-00000000000a', 'phones-smartphones', 'classified', 'Galaxy Phone Two', '', 100, 'ERN', 'ER', 'Asmara', now() - interval '4 days') returning id as s2 \gset
+insert into listings (seller_id, category_id, listing_type, title, description, price_minor, currency, country_code, city, created_at) values
+  ('00000000-0000-0000-0000-00000000000a', 'phones-accessories', 'classified', 'Ordered Case Three', 'fits galaxy', 100, 'ERN', 'ER', 'Asmara', now() - interval '3 days') returning id as s3 \gset
+insert into listings (seller_id, category_id, listing_type, title, description, price_minor, currency, country_code, city, created_at) values
+  ('00000000-0000-0000-0000-00000000000a', 'phones', 'classified', 'Middle Phone Five', '', 100, 'ERN', 'ER', 'Asmara', now() - interval '2 days') returning id as s5 \gset
+insert into listings (seller_id, category_id, listing_type, title, description, price_minor, currency, country_code, city, created_at) values
+  ('00000000-0000-0000-0000-00000000000a', 'phones-smartphones', 'classified', 'Newest Phone Four', '', 100, 'ERN', 'ER', 'Asmara', now() - interval '1 day') returning id as s4 \gset
+insert into listings (seller_id, category_id, listing_type, title, description, price_minor, currency, country_code, city, created_at) values
+  ('00000000-0000-0000-0000-00000000000a', 'habesha-wear-women', 'classified', 'Asmara Dress', '', 100, 'ERN', 'ER', 'Asmara', now() - interval '6 days') returning id as d1 \gset
+select t.ok(t.feed('phones') = array[:'s4', :'s5', :'s3', :'s2', :'s1']::uuid[], 'no placements: newest first');
+
+-- normal user B
+select t.act('00000000-0000-0000-0000-00000000000b'); set role authenticated;
+select t.fails($$select * from admins$$, 'permission denied', 'normal user cannot read admins');
+select t.ok(not is_admin(), 'is_admin() is false for a normal user');
+select t.fails(format($$insert into category_placements (category_id, listing_id, position) values ('phones', %L, 1)$$, :'s1'), 'permission denied', 'normal user cannot insert placements');
+select t.fails($$update category_placements set position = 1$$, 'permission denied', 'normal user cannot update placements');
+select t.fails($$delete from category_placements$$, 'permission denied', 'normal user cannot delete placements');
+select t.fails(format($$select admin_set_category_order('phones', array[%L]::uuid[])$$, :'s1'), 'only admins', 'normal user cannot call admin_set_category_order');
+select t.fails(format($$select admin_pin_listing('phones', %L)$$, :'s1'), 'only admins', 'normal user cannot call admin_pin_listing');
+select t.fails(format($$select admin_unpin_listing('phones', %L)$$, :'s1'), 'only admins', 'normal user cannot call admin_unpin_listing');
+select t.fails($$select * from admin_get_category_order('phones')$$, 'only admins', 'normal user cannot call admin_get_category_order');
+reset role; set role anon;
+select t.fails(format($$select admin_pin_listing('phones', %L)$$, :'s1'), 'permission denied', 'anon cannot call admin RPCs');
+select t.fails($$select is_admin()$$, 'permission denied', 'anon cannot call is_admin');
+
+-- admin D
+reset role; select t.act('00000000-0000-0000-0000-00000000000d'); set role authenticated;
+select t.ok(is_admin(), 'is_admin() is true for an admin');
+select admin_set_category_order('phones', array[:'s3', :'s1']::uuid[]);
+select t.fails(format($$select admin_set_category_order('phones', array[%L, %L]::uuid[])$$, :'s1', :'s1'), 'duplicate', 'set order rejects duplicates');
+select t.fails(format($$select admin_set_category_order('phones', array[%L]::uuid[])$$, :'d1'), 'not an active listing', 'set order rejects listings from another category');
+select t.fails(format($$select admin_set_category_order('phones', array[%L]::uuid[])$$, :'charger'), 'not an active listing', 'set order rejects inactive listings');
+select t.fails(format($$select admin_set_category_order('no-such-cat', array[%L]::uuid[])$$, :'s1'), 'unknown category', 'set order rejects unknown category');
+reset role; set role anon;
+select t.ok(t.feed('phones') = array[:'s3', :'s1', :'s4', :'s5', :'s2']::uuid[], 'category: placed first in admin order, then newest first');
+select t.ok((t.feed('phones', 'galaxy'))[1] = :'s2', 'with search text the best match still comes first');
+select t.ok(t.feed('phones-smartphones') = array[:'s4', :'s2', :'s1']::uuid[], 'order of phones does not affect phones-smartphones');
+reset role; set role authenticated;
+select admin_set_category_order('phones-smartphones', array[:'s2']::uuid[]);
+select admin_set_category_order('all', array[:'d1', :'s5']::uuid[]);
+reset role; set role anon;
+select t.ok(t.feed('phones-smartphones') = array[:'s2', :'s4', :'s1']::uuid[], 'sub-category has its own order');
+select t.ok(t.feed('phones') = array[:'s3', :'s1', :'s4', :'s5', :'s2']::uuid[], 'order of phones-smartphones / all does not affect phones');
+select t.ok(t.feed(null) = array[:'d1', :'s5', :'s4', :'s3', :'s2', :'s1']::uuid[], '''all'' order applies when no category');
+
+reset role; set role authenticated;
+select admin_pin_listing('phones', :'s4', 1);
+select t.ok((select array_agg(listing_id order by position) = array[:'s4', :'s3', :'s1']::uuid[] and array_agg(position order by position) = '{1,2,3}'
+             from admin_get_category_order('phones')), 'pin inserts at position and shifts others');
+select admin_pin_listing('phones', :'s4', 3);
+select t.ok((select array_agg(listing_id order by position) = array[:'s3', :'s1', :'s4']::uuid[] and array_agg(position order by position) = '{1,2,3}'
+             from admin_get_category_order('phones')), 'pin moves an already placed listing');
+select admin_unpin_listing('phones', :'s3');
+select t.ok((select array_agg(listing_id order by position) = array[:'s1', :'s4']::uuid[] and array_agg(position order by position) = '{1,2}'
+             from admin_get_category_order('phones')), 'unpin closes the gap');
+select admin_pin_listing('phones', :'s1', 1, now() + interval '1 day');
+select admin_set_category_order('phones', array[:'s4', :'s1']::uuid[]);
+select t.ok((select pinned_until is not null from admin_get_category_order('phones') where listing_id = :'s1'), 'set order keeps pinned_until');
+reset role;
+update category_placements set pinned_until = now() - interval '1 hour' where category_id = 'phones' and listing_id = :'s1';
+set role authenticated;
+select t.ok((select is_expired from admin_get_category_order('phones') where listing_id = :'s1'), 'admin sees expired placement');
+reset role; set role anon;
+select t.ok(t.feed('phones') = array[:'s4', :'s5', :'s3', :'s2', :'s1']::uuid[], 'expired pinned_until is ignored');
+reset role; update listings set status = 'sold' where id = :'s4'; set role anon;
+select t.ok(t.feed('phones') = array[:'s5', :'s3', :'s2', :'s1']::uuid[], 'placement of a sold listing is ignored');
+reset role; update listings set status = 'active' where id = :'s4';
+update listings set category_id = 'habesha-wear-women' where id = :'s4'; set role anon;
+select t.ok(t.feed('phones') = array[:'s5', :'s3', :'s2', :'s1']::uuid[], 'placement of a moved listing is ignored');
+select t.ok(t.feed('habesha-wear-women') = array[:'s4', :'d1']::uuid[], 'moved listing is not placed in its new category');
+reset role; set role authenticated;
+select admin_set_category_order('phones', '{}');
+select t.ok((select count(*) from admin_get_category_order('phones')) = 0, 'empty array clears the order');
+
 reset role;
 select t.ok((select count(*) from pg_publication_tables where pubname = 'supabase_realtime' and tablename = 'messages') = 1, 'messages published to realtime');
 \pset tuples_only on

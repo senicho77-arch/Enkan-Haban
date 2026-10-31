@@ -86,7 +86,7 @@ fun ProductImage(product: Product, modifier: Modifier = Modifier, emojiSize: Int
 }
 
 @Composable
-fun ProductCard(product: Product, onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun ProductCard(product: Product, onClick: () -> Unit, modifier: Modifier = Modifier, pinned: Boolean = false) {
     val shape = RoundedCornerShape(22.dp)
     var liked by remember(product.id) { mutableStateOf(false) }
 
@@ -101,6 +101,15 @@ fun ProductCard(product: Product, onClick: () -> Unit, modifier: Modifier = Modi
         Box {
             ProductImage(product, Modifier.fillMaxWidth().aspectRatio(1f))
             product.discountPercent?.let { DiscountBadge(it, Modifier.align(Alignment.TopStart).padding(10.dp)) }
+            if (pinned) {
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = Color.White.copy(alpha = 0.9f),
+                    modifier = Modifier.align(Alignment.BottomStart).padding(8.dp),
+                ) {
+                    Text("📌", fontSize = 13.sp, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                }
+            }
             Surface(
                 onClick = { liked = !liked },
                 shape = CircleShape,
