@@ -160,4 +160,13 @@ class NavigatorTest {
         assertEquals(Route.Home, navigator.current)
         assertFalse(navigator.goBack())
     }
+
+    @Test
+    fun sellerPhoneLinks() {
+        assertEquals("tel:+256752556677", com.example.enkan_haban.util.telUri("+256 752 556 677"))
+        assertEquals("tel:0757019683", com.example.enkan_haban.util.telUri("0757 019 683"))
+        assertEquals("https://wa.me/256752556677", com.example.enkan_haban.util.whatsappUri("+256 752 556 677"))
+        assertEquals("https://wa.me/251911000000", com.example.enkan_haban.util.whatsappUri("00251 911 000 000"))
+        assertEquals(null, com.example.enkan_haban.util.whatsappUri("0757 019 683"))
+    }
 }

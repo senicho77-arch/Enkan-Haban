@@ -106,7 +106,13 @@ fun SellScreen(
             }
 
             FormField("ቦታ (ከተማ፡ ከባቢ)", form.location, errors["location"]) { v -> viewModel.update { it.copy(location = v) } }
-            FormField("ቁጽሪ ተሌፎን", form.phone, errors["phone"], keyboardType = KeyboardType.Phone) { v ->
+            FormField(
+                "ቁጽሪ ተሌፎን (ምስ +256 …)",
+                form.phone,
+                errors["phone"],
+                keyboardType = KeyboardType.Phone,
+                hint = "እዚ ቁጽሪ ኣብ መወዓውዒኻ ንዓደግቲ ብቐጥታ ይርአ። ምስ +ኮድ ሃገር እንተጽሒፍካ WhatsApp እውን ይሰርሕ።",
+            ) { v ->
                 viewModel.update { it.copy(phone = v) }
             }
 
@@ -192,6 +198,7 @@ private fun FormField(
     error: String?,
     singleLine: Boolean = true,
     keyboardType: KeyboardType = KeyboardType.Text,
+    hint: String? = null,
     onValueChange: (String) -> Unit,
 ) {
     OutlinedTextField(
@@ -199,7 +206,7 @@ private fun FormField(
         onValueChange = onValueChange,
         label = { Text(label) },
         isError = error != null,
-        supportingText = error?.let { { Text(it) } },
+        supportingText = (error ?: hint)?.let { { Text(it) } },
         singleLine = singleLine,
         minLines = if (singleLine) 1 else 3,
         keyboardOptions = KeyboardOptions(keyboardType = keyboardType),

@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
@@ -26,6 +27,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
@@ -37,6 +40,11 @@ import com.example.enkan_haban.ui.components.ListingTypeTag
 import com.example.enkan_haban.ui.components.ProductImage
 import com.example.enkan_haban.ui.components.SimpleTopBar
 import com.example.enkan_haban.util.formatPrice
+import com.example.enkan_haban.util.telUri
+import com.example.enkan_haban.util.whatsappUri
+
+private val CallGreen = Color(0xFF00A63E)
+private val WhatsAppGreen = Color(0xFF25D366)
 
 private sealed interface DetailState {
     data object Loading : DetailState
@@ -87,17 +95,25 @@ private fun ProductDetailContent(product: Product, onGoToCart: () -> Unit) {
                     Text(formatPrice(it), textDecoration = TextDecoration.LineThrough, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 Text("📍 ${product.location}", style = MaterialTheme.typography.bodyMedium)
+                if (product.listingType == ListingType.CLASSIFIED) SafetyWarning()
                 HorizontalDivider(Modifier.padding(vertical = 8.dp))
                 Text("መግለጺ", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                 Text(product.description, style = MaterialTheme.typography.bodyMedium)
                 HorizontalDivider(Modifier.padding(vertical = 8.dp))
                 Card(Modifier.fillMaxWidth()) {
-                    Column(Modifier.padding(16.dp)) {
+                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         Text("ሸያጢ", style = MaterialTheme.typography.labelMedium)
                         Text(
                             product.seller.name + if (product.seller.isVerified) "  ✔ ዝተረጋገጸ" else "",
                             style = MaterialTheme.typography.titleMedium,
                         )
+                        if (product.listingType == ListingType.CLASSIFIED && product.seller.phone.isNotBlank()) {
+                            Text(
+                                "📞 ${product.seller.phone}",
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = FontWeight.Bold,
+                            )
+                        }
                     }
                 }
             }
@@ -130,15 +146,48 @@ private fun StoreActions(product: Product, onGoToCart: () -> Unit) {
     }
 }
 
+/** Shown on every ad, like Jiji: the most common scam is "pay first, I'll deliver". */
+@Composable
+private fun SafetyWarning() {
+    Surface(
+        color = MaterialTheme.colorScheme.errorContainer,
+        shape = MaterialTheme.shapes.medium,
+        modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+    ) {
+        Text(
+            "⚠️ ኣቕሓ ብዓይንኻ ከይረኣኻ ገንዘብ ኣቐዲምካ ኣይትኽፈል — ንመብጽሒ (delivery) እውን።",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onErrorContainer,
+            modifier = Modifier.padding(12.dp),
+        )
+    }
+}
+
+/**
+ * Buyers reach the seller directly: the number is shown on the button itself and one tap
+ * opens the phone's dialer. WhatsApp appears when the number has a country code.
+ */
 @Composable
 private fun ClassifiedActions(product: Product) {
-    var showContact by remember { mutableStateOf(false) }
+    val uriHandler = LocalUriHandler.current
+    val phone = product.seller.phone
+    val whatsapp = whatsappUri(phone)
+    if (phone.isBlank()) {
+        Text("ሸያጢ ቁጽሪ ተሌፎን ኣየእተወን።", style = MaterialTheme.typography.bodyMedium)
+        return
+    }
     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        Button(onClick = { showContact = true }, modifier = Modifier.weight(1f)) {
-            Text(if (showContact) "📞 ${product.seller.phone}" else "ርክብ ኣርኢ")
-        }
-        OutlinedButton(onClick = { /* TODO: in-app chat */ }, enabled = false, modifier = Modifier.weight(1f)) {
-            Text("ዕላል (ቀልጢፉ)")
+        Button(
+            onClick = { runCatching { uriHandler.openUri(telUri(phone)) } },
+            colors = ButtonDefaults.buttonColors(containerColor = CallGreen, contentColor = Color.White),
+            modifier = Modifier.weight(if (whatsapp != null) 1.6f else 1f),
+        ) { Text("📞 $phone", fontWeight = FontWeight.Bold, maxLines = 1) }
+        if (whatsapp != null) {
+            Button(
+                onClick = { runCatching { uriHandler.openUri(whatsapp) } },
+                colors = ButtonDefaults.buttonColors(containerColor = WhatsAppGreen, contentColor = Color.White),
+                modifier = Modifier.weight(1f),
+            ) { Text("WhatsApp", fontWeight = FontWeight.Bold, maxLines = 1) }
         }
     }
 }
