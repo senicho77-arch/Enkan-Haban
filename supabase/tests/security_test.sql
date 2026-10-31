@@ -122,6 +122,28 @@ select t.fails(format($$insert into listing_images (listing_id, storage_path) va
 insert into listing_images (listing_id, storage_path) values (:'phone', '00000000-0000-0000-0000-00000000000a/' || :'phone' || '/0.jpg');
 select t.ok(true, 'seller attaches image from own folder');
 
+-- Request call back
+reset role; set role anon;
+select t.fails(format($$select request_callback(%L, 'X', '+256700000000')$$, :'kemis'), 'permission denied', 'anon cannot request a call back');
+reset role; select t.act('00000000-0000-0000-0000-00000000000b'); set role authenticated;
+select t.fails(format($$select request_callback(%L, 'B', 'call me')$$, :'kemis'), 'phone', 'request_callback validates phone');
+select t.fails(format($$select request_callback(%L, ' ', '+256700000000')$$, :'kemis'), 'name', 'request_callback requires a name');
+select t.fails(format($$select request_callback(%L, 'B', '+256700000000')$$, :'phone'), 'not found', 'call back only on classified ads');
+select request_callback(:'kemis', 'Buyer B', '+256 752 000 111') as cb \gset
+select request_callback(:'kemis', 'Buyer B', '+256 752 000 222') as cb2 \gset
+select t.ok(:'cb2' = :'cb' and (select buyer_phone from callback_requests where id = :'cb') = '+256 752 000 222', 'asking again updates the open request');
+select t.fails(format($$insert into callback_requests (listing_id, buyer_id, seller_id, buyer_name, buyer_phone) values (%L, auth.uid(), '00000000-0000-0000-0000-00000000000a', 'B', '+256700000000')$$, :'kemis'), 'permission denied', 'callbacks only via request_callback');
+update callback_requests set status = 'done' where id = :'cb';
+select t.ok((select status from callback_requests where id = :'cb') = 'new', 'buyer cannot mark the call back done');
+reset role; select t.act('00000000-0000-0000-0000-00000000000c'); set role authenticated;
+select t.ok((select count(*) from callback_requests) = 0, 'outsider cannot see call back requests');
+reset role; select t.act('00000000-0000-0000-0000-00000000000a'); set role authenticated;
+select t.fails(format($$select request_callback(%L, 'A', '+256700000000')$$, :'kemis'), 'yourself', 'seller cannot request own call back');
+select t.ok((select buyer_name from callback_requests where id = :'cb') = 'Buyer B', 'seller sees the call back request');
+select t.fails(format($$update callback_requests set buyer_phone = '+1 000 000 0000' where id = %L$$, :'cb'), 'permission denied', 'seller cannot change the buyer''s number');
+update callback_requests set status = 'done' where id = :'cb';
+select t.ok((select status from callback_requests where id = :'cb') = 'done', 'seller marks the call back done');
+
 reset role;
 select t.ok((select count(*) from pg_publication_tables where pubname = 'supabase_realtime' and tablename = 'messages') = 1, 'messages published to realtime');
 \pset tuples_only on

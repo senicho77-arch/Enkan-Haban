@@ -72,3 +72,24 @@ data class ListingDraft(
  * Compared by identity, so the same picture picked twice is two separate photos.
  */
 class Photo(val bytes: ByteArray)
+
+/** One message in a buyer ↔ seller chat about a classified ad. */
+data class ChatMessage(
+    val id: Long,
+    val body: String,
+    val fromMe: Boolean,
+)
+
+/** The buyer's chat with a seller about one ad (backend: conversations + messages). */
+data class Conversation(
+    val id: String,
+    val product: Product,
+    val messages: List<ChatMessage> = emptyList(),
+)
+
+/** "Request call back": the buyer leaves a name and number for the seller to call (backend: callback_requests). */
+data class CallbackRequest(
+    val productId: String,
+    val name: String,
+    val phone: String,
+)

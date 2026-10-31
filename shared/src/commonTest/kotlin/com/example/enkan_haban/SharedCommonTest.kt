@@ -169,4 +169,29 @@ class NavigatorTest {
         assertEquals("https://wa.me/251911000000", com.example.enkan_haban.util.whatsappUri("00251 911 000 000"))
         assertEquals(null, com.example.enkan_haban.util.whatsappUri("0757 019 683"))
     }
+
+    @Test
+    fun chatReopensSameConversationPerAd() {
+        val repo = com.example.enkan_haban.data.InMemoryChatRepository()
+        val ad = SampleData.products.first { it.id == "p2" }
+        val id = repo.startChat(ad, "  ሰላም፡ ኣሎ ድዩ?  ")
+        assertEquals(id, repo.startChat(ad, "መወዳእታ ዋጋ?"))
+        val conversation = repo.conversations.value.single()
+        assertEquals(listOf("ሰላም፡ ኣሎ ድዩ?", "መወዳእታ ዋጋ?"), conversation.messages.map { it.body })
+        assertTrue(conversation.messages.all { it.fromMe })
+        assertFailsWith<IllegalArgumentException> { repo.send(id, "   ") }
+    }
+
+    @Test
+    fun callbackRequestValidatesAndReplaces() {
+        val repo = com.example.enkan_haban.data.InMemoryChatRepository()
+        val ad = SampleData.products.first { it.id == "p2" }
+        assertFailsWith<IllegalArgumentException> { repo.requestCallback(ad, "Abel", "call me") }
+        assertFailsWith<IllegalArgumentException> { repo.requestCallback(ad, " ", "+256 752 000 111") }
+        repo.requestCallback(ad, "Abel", "+256 752 000 111")
+        repo.requestCallback(ad, "Abel", "0752 000 222")
+        assertEquals(listOf("0752 000 222"), repo.callbackRequests.value.map { it.phone })
+        assertTrue(com.example.enkan_haban.data.isValidPhone("+251 911 000 000"))
+        assertFalse(com.example.enkan_haban.data.isValidPhone("12345"))
+    }
 }

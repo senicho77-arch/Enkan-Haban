@@ -1,5 +1,6 @@
 package com.example.enkan_haban.ui.account
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -19,7 +20,7 @@ import com.example.enkan_haban.ui.components.SimpleTopBar
 import com.example.enkan_haban.util.CurrencySettings
 
 @Composable
-fun AccountScreen() {
+fun AccountScreen(onOpenChats: () -> Unit) {
     Column(Modifier.fillMaxSize()) {
         SimpleTopBar(title = "ኣካውንት")
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -38,8 +39,12 @@ fun AccountScreen() {
                 )
             }
             Card(Modifier.fillMaxWidth()) {
-                listOf("📦  ትእዛዛተይ", "📢  መዋዓውዒታተይ", "❤️  ዝዓቀብክዎም", "⚙️  ምድላዋት").forEachIndexed { index, label ->
-                    if (index > 0) HorizontalDivider()
+                ListItem(
+                    headlineContent = { Text("💬  መልእኽታተይ") },
+                    modifier = Modifier.clickable(onClick = onOpenChats),
+                )
+                listOf("📦  ትእዛዛተይ", "📢  መዋዓውዒታተይ", "❤️  ዝዓቀብክዎም", "⚙️  ምድላዋት").forEach { label ->
+                    HorizontalDivider()
                     ListItem(headlineContent = { Text(label) })
                 }
             }

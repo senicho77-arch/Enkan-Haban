@@ -13,6 +13,8 @@ sealed interface Route {
     data object Account : Tab
 
     data class ProductDetail(val productId: String) : Route
+    data class Chat(val conversationId: String) : Route
+    data object Chats : Route
 }
 
 /** Minimal back-stack navigator. Home is always the root. */

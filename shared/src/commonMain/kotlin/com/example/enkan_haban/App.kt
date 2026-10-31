@@ -21,6 +21,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.enkan_haban.data.itemCount
 import com.example.enkan_haban.ui.account.AccountScreen
 import com.example.enkan_haban.ui.cart.CartScreen
+import com.example.enkan_haban.ui.chat.ChatListScreen
+import com.example.enkan_haban.ui.chat.ChatScreen
 import com.example.enkan_haban.ui.home.HomeScreen
 import com.example.enkan_haban.ui.navigation.Navigator
 import com.example.enkan_haban.ui.navigation.Route
@@ -82,11 +84,21 @@ fun App(navigator: Navigator = AppContainer.navigator) {
                         onProductClick = { navigator.navigate(Route.ProductDetail(it)) },
                         onContinueShopping = { navigator.selectTab(Route.Home) },
                     )
-                    Route.Account -> AccountScreen()
+                    Route.Account -> AccountScreen(onOpenChats = { navigator.navigate(Route.Chats) })
                     is Route.ProductDetail -> ProductDetailScreen(
                         productId = route.productId,
                         onBack = { navigator.goBack() },
                         onGoToCart = { navigator.selectTab(Route.Cart) },
+                        onOpenChat = { navigator.navigate(Route.Chat(it)) },
+                    )
+                    is Route.Chat -> ChatScreen(
+                        conversationId = route.conversationId,
+                        onBack = { navigator.goBack() },
+                        onOpenProduct = { navigator.navigate(Route.ProductDetail(it)) },
+                    )
+                    Route.Chats -> ChatListScreen(
+                        onBack = { navigator.goBack() },
+                        onOpenChat = { navigator.navigate(Route.Chat(it)) },
                     )
                 }
             }

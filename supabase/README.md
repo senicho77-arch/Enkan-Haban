@@ -41,6 +41,7 @@
 | Feed / search | `rpc("search_listings", q, p_category_id, p_country, p_city, p_type, p_limit, p_offset)` |
 | Own profile (incl. phone, settings) | `rpc("get_my_profile")` — `profiles` itself only shows the public card, so select columns explicitly (`id, full_name, avatar_url, country_code, city, is_verified, created_at`), not `*` |
 | Checkout | `rpc("place_order", …)` — one call per store in the cart |
+| ደውለለይ / Request call back (classified ads) | `rpc("request_callback", p_listing_id, p_name, p_phone)` — seller reads `callback_requests`, marks done with `update callback_requests set status = 'done'` |
 | Buyer cancels (while pending) | `rpc("cancel_order", p_order_id)` |
 | Store moves order on | `update orders set status = …` (confirmed → shipped → delivered, or cancelled before shipping) |
 | Open a chat | `rpc("start_conversation", p_listing_id)`; new messages arrive live via Realtime on `messages` |
