@@ -30,7 +30,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -69,9 +68,14 @@ fun ProductDetailScreen(
     productId: String,
     onBack: () -> Unit,
     onOpenChat: (conversationId: String) -> Unit,
+    onEdit: () -> Unit,
 ) {
-    val state by produceState<DetailState>(DetailState.Loading, productId) {
-        value = AppContainer.productRepository.getProduct(productId)?.let { DetailState.Loaded(it) } ?: DetailState.NotFound
+    // Observed rather than loaded once, so the page shows the seller's edits on return.
+    val products by remember { AppContainer.productRepository.observeProducts() }
+        .collectAsStateWithLifecycle(initialValue = null)
+    val state = when (val list = products) {
+        null -> DetailState.Loading
+        else -> list.firstOrNull { it.id == productId }?.let { DetailState.Loaded(it) } ?: DetailState.NotFound
     }
 
     Column(Modifier.fillMaxSize()) {
@@ -79,13 +83,13 @@ fun ProductDetailScreen(
         when (val s = state) {
             DetailState.Loading -> Box(Modifier.fillMaxSize(), Alignment.Center) { CircularProgressIndicator() }
             DetailState.NotFound -> Box(Modifier.fillMaxSize(), Alignment.Center) { Text("እዚ ኣቕሓ ድሕሪ ሕጂ የለን።") }
-            is DetailState.Loaded -> ProductDetailContent(s.product, onOpenChat)
+            is DetailState.Loaded -> ProductDetailContent(s.product, onOpenChat, onEdit)
         }
     }
 }
 
 @Composable
-private fun ProductDetailContent(product: Product, onOpenChat: (String) -> Unit) {
+private fun ProductDetailContent(product: Product, onOpenChat: (String) -> Unit, onEdit: () -> Unit) {
     val savedItems by AppContainer.savedRepository.items.collectAsStateWithLifecycle()
     val isSaved = savedItems.any { it.id == product.id }
     Column(Modifier.fillMaxSize()) {
@@ -147,14 +151,24 @@ private fun ProductDetailContent(product: Product, onOpenChat: (String) -> Unit)
         }
         Surface(tonalElevation = 3.dp, shadowElevation = 8.dp) {
             Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                OutlinedButton(
-                    onClick = { AppContainer.savedRepository.toggle(product) },
-                    modifier = Modifier.fillMaxWidth(),
-                ) { Text(if (isSaved) "❤️ ኣብ ዘንቢል ኣሎ" else "🤍 ኣብ ዘንቢል ኣጽንሕ") }
-                ContactActions(product)
+                if (product.isEditableBy(AppContainer.currentUser)) {
+                    OwnerActions(onEdit)
+                } else {
+                    OutlinedButton(
+                        onClick = { AppContainer.savedRepository.toggle(product) },
+                        modifier = Modifier.fillMaxWidth(),
+                    ) { Text(if (isSaved) "❤️ ኣብ ዘንቢል ኣሎ" else "🤍 ኣብ ዘንቢል ኣጽንሕ") }
+                    ContactActions(product)
+                }
             }
         }
     }
+}
+
+/** Shown to the seller on their own ad instead of the buyer actions. */
+@Composable
+private fun OwnerActions(onEdit: () -> Unit) {
+    Button(onClick = onEdit, modifier = Modifier.fillMaxWidth()) { Text("✏️  ዋጋ፡ ስእሊ ወይ ጽሑፍ ኣመሓይሽ") }
 }
 
 /** Shown on every product, like Jiji: the most common scam is "pay first, I'll deliver". */

@@ -79,7 +79,13 @@ fun App(navigator: Navigator = AppContainer.navigator) {
                         onProductClick = { navigator.navigate(Route.ProductDetail(it)) },
                         onSellClick = { navigator.selectTab(Route.Sell) },
                     )
-                    Route.Sell -> SellScreen(onPosted = { navigator.navigate(Route.ProductDetail(it)) })
+                    Route.Sell -> SellScreen(onDone = { navigator.navigate(Route.ProductDetail(it)) })
+                    is Route.EditListing -> SellScreen(
+                        onDone = { navigator.goBack() },
+                        editProductId = route.productId,
+                        formKey = "edit-${route.productId}-${route.visit}",
+                        onBack = { navigator.goBack() },
+                    )
                     Route.Cart -> SavedScreen(
                         onProductClick = { navigator.navigate(Route.ProductDetail(it)) },
                         onContinueShopping = { navigator.selectTab(Route.Home) },
@@ -93,6 +99,7 @@ fun App(navigator: Navigator = AppContainer.navigator) {
                         productId = route.productId,
                         onBack = { navigator.goBack() },
                         onOpenChat = { navigator.navigate(Route.Chat(it)) },
+                        onEdit = { navigator.navigate(Route.EditListing(route.productId)) },
                     )
                     is Route.Chat -> ChatScreen(
                         conversationId = route.conversationId,

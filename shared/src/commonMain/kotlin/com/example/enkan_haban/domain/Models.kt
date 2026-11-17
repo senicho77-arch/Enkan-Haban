@@ -48,6 +48,9 @@ data class Product(
 ) {
     val discountPercent: Int?
         get() = oldPrice?.takeIf { it > price }?.let { ((it - price) * 100 / it).toInt() }
+
+    /** Only the seller who posted a classified ad may edit it; store items are managed elsewhere. */
+    fun isEditableBy(user: Seller): Boolean = listingType == ListingType.CLASSIFIED && seller.id == user.id
 }
 
 data class CartItem(
@@ -57,7 +60,7 @@ data class CartItem(
     val total: Long get() = product.price * quantity
 }
 
-/** User input for a new classified ad, before it becomes a [Product]. */
+/** User input for a classified ad — a new one, or new values for an existing one. */
 data class ListingDraft(
     val title: String,
     val description: String,

@@ -31,7 +31,7 @@ fun AccountScreen(onOpenChats: () -> Unit, onAdminOrderClick: () -> Unit = {}) {
             Card(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text("እንቋዕ ናብ እንካን ሃባን ብደሓን መጻእኩም", style = MaterialTheme.typography.titleMedium)
-                    Text("ትእዛዛትካ ንምክትታል፡ መዋዓውዒታትካ ንምምሕዳርን ምስ ሸየጥቲ ንምዝራብን እቶ።")
+                    Text("ትእዛዛትካ ንምክትታል፡ ዝሸጥካዮም ኣቕሑ ንምምሕዳርን ምስ ሸየጥቲ ንምዝራብን እቶ።")
                     Button(onClick = { /* TODO: authentication */ }, enabled = false) { Text("እቶ (ቀልጢፉ ይመጽእ)") }
                 }
             }
@@ -47,7 +47,7 @@ fun AccountScreen(onOpenChats: () -> Unit, onAdminOrderClick: () -> Unit = {}) {
                     headlineContent = { Text("💬  መልእኽታተይ") },
                     modifier = Modifier.clickable(onClick = onOpenChats),
                 )
-                listOf("📦  ትእዛዛተይ", "📢  መዋዓውዒታተይ", "❤️  ዝዓቀብክዎም", "⚙️  ምድላዋት").forEach { label ->
+                listOf("📦  ትእዛዛተይ", "🏷️  ኣቕሑተይ", "❤️  ዝዓቀብክዎም", "⚙️  ምድላዋት").forEach { label ->
                     HorizontalDivider()
                     ListItem(headlineContent = { Text(label) })
                 }
