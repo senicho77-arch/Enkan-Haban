@@ -23,9 +23,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -39,6 +37,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.enkan_haban.AppContainer
 import com.example.enkan_haban.data.SampleData
 import com.example.enkan_haban.domain.ListingType
 import com.example.enkan_haban.domain.Photo
@@ -86,9 +86,10 @@ fun ProductImage(product: Product, modifier: Modifier = Modifier, emojiSize: Int
 }
 
 @Composable
-fun ProductCard(product: Product, onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun ProductCard(product: Product, onClick: () -> Unit, modifier: Modifier = Modifier, pinned: Boolean = false) {
     val shape = RoundedCornerShape(22.dp)
-    var liked by remember(product.id) { mutableStateOf(false) }
+    val savedItems by AppContainer.savedRepository.items.collectAsStateWithLifecycle()
+    val liked = savedItems.any { it.id == product.id }
 
     Column(
         modifier = modifier
@@ -101,8 +102,17 @@ fun ProductCard(product: Product, onClick: () -> Unit, modifier: Modifier = Modi
         Box {
             ProductImage(product, Modifier.fillMaxWidth().aspectRatio(1f))
             product.discountPercent?.let { DiscountBadge(it, Modifier.align(Alignment.TopStart).padding(10.dp)) }
+            if (pinned) {
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = Color.White.copy(alpha = 0.9f),
+                    modifier = Modifier.align(Alignment.BottomStart).padding(8.dp),
+                ) {
+                    Text("📌", fontSize = 13.sp, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                }
+            }
             Surface(
-                onClick = { liked = !liked },
+                onClick = { AppContainer.savedRepository.toggle(product) },
                 shape = CircleShape,
                 color = Color.White.copy(alpha = 0.9f),
                 modifier = Modifier.align(Alignment.TopEnd).padding(8.dp).size(34.dp),

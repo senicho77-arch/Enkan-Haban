@@ -18,15 +18,15 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.example.enkan_haban.data.itemCount
 import com.example.enkan_haban.ui.account.AccountScreen
-import com.example.enkan_haban.ui.cart.CartScreen
+import com.example.enkan_haban.ui.admin.AdminOrderScreen
 import com.example.enkan_haban.ui.chat.ChatListScreen
 import com.example.enkan_haban.ui.chat.ChatScreen
 import com.example.enkan_haban.ui.home.HomeScreen
 import com.example.enkan_haban.ui.navigation.Navigator
 import com.example.enkan_haban.ui.navigation.Route
 import com.example.enkan_haban.ui.product.ProductDetailScreen
+import com.example.enkan_haban.ui.saved.SavedScreen
 import com.example.enkan_haban.ui.sell.SellScreen
 import com.example.enkan_haban.ui.theme.EnkanHabanTheme
 import com.example.enkan_haban.ui.theme.Navy
@@ -44,7 +44,7 @@ private val tabs = listOf(
 @Preview
 fun App(navigator: Navigator = AppContainer.navigator) {
     EnkanHabanTheme {
-        val cartItems by AppContainer.cartRepository.items.collectAsStateWithLifecycle()
+        val savedItems by AppContainer.savedRepository.items.collectAsStateWithLifecycle()
         Scaffold(
             bottomBar = {
                 NavigationBar(
@@ -62,8 +62,8 @@ fun App(navigator: Navigator = AppContainer.navigator) {
                                 selectedTextColor = MaterialTheme.colorScheme.primary,
                             ),
                             icon = {
-                                if (item.tab == Route.Cart && cartItems.isNotEmpty()) {
-                                    BadgedBox(badge = { Badge { Text("${cartItems.itemCount}") } }) { Text(item.emoji) }
+                                if (item.tab == Route.Cart && savedItems.isNotEmpty()) {
+                                    BadgedBox(badge = { Badge { Text("${savedItems.size}") } }) { Text(item.emoji) }
                                 } else {
                                     Text(item.emoji)
                                 }
@@ -80,15 +80,18 @@ fun App(navigator: Navigator = AppContainer.navigator) {
                         onSellClick = { navigator.selectTab(Route.Sell) },
                     )
                     Route.Sell -> SellScreen(onPosted = { navigator.navigate(Route.ProductDetail(it)) })
-                    Route.Cart -> CartScreen(
+                    Route.Cart -> SavedScreen(
                         onProductClick = { navigator.navigate(Route.ProductDetail(it)) },
                         onContinueShopping = { navigator.selectTab(Route.Home) },
                     )
-                    Route.Account -> AccountScreen(onOpenChats = { navigator.navigate(Route.Chats) })
+                    Route.Account -> AccountScreen(
+                        onOpenChats = { navigator.navigate(Route.Chats) },
+                        onAdminOrderClick = { navigator.navigate(Route.AdminOrder) },
+                    )
+                    Route.AdminOrder -> AdminOrderScreen(onBack = { navigator.goBack() })
                     is Route.ProductDetail -> ProductDetailScreen(
                         productId = route.productId,
                         onBack = { navigator.goBack() },
-                        onGoToCart = { navigator.selectTab(Route.Cart) },
                         onOpenChat = { navigator.navigate(Route.Chat(it)) },
                     )
                     is Route.Chat -> ChatScreen(

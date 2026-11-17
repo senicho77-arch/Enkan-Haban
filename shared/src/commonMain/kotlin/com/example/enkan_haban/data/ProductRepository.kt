@@ -4,7 +4,9 @@ import com.example.enkan_haban.domain.Category
 import com.example.enkan_haban.domain.ListingDraft
 import com.example.enkan_haban.domain.ListingType
 import com.example.enkan_haban.domain.Product
+import com.example.enkan_haban.domain.Placement
 import com.example.enkan_haban.domain.Seller
+import com.example.enkan_haban.util.nowEpochMs
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -43,6 +45,7 @@ class InMemoryProductRepository(
             seller = seller.copy(phone = draft.phone),
             listingType = ListingType.CLASSIFIED,
             photos = draft.photos,
+            createdAtEpochMs = nowEpochMs(),
         )
         products.update { listOf(product) + it }
         return product
@@ -57,4 +60,20 @@ fun filterProducts(products: List<Product>, query: String, categoryId: String?):
             (q.isEmpty() || product.title.contains(q, ignoreCase = true) ||
                 product.description.contains(q, ignoreCase = true))
     }
+}
+
+/**
+ * Order of [products] for the category the buyer is viewing ([categoryKey], or
+ * [com.example.enkan_haban.domain.ALL_CATEGORIES] for the home feed):
+ * products the admin placed come first in the admin's order, all others follow newest first.
+ * Expired placements and placements of products that are not in [products] are ignored.
+ */
+fun orderForCategory(products: List<Product>, placements: List<Placement>, categoryKey: String, nowMs: Long): List<Product> {
+    val rank = HashMap<String, Int>()
+    placements
+        .filter { it.categoryKey == categoryKey && !it.isExpired(nowMs) }
+        .forEach { p -> rank[p.productId] = minOf(rank[p.productId] ?: Int.MAX_VALUE, p.position) }
+    val (placed, rest) = products.partition { it.id in rank }
+    // sortedBy is stable, so products without a date keep their list order ("newest first").
+    return placed.sortedBy { rank.getValue(it.id) } + rest.sortedByDescending { it.createdAtEpochMs }
 }

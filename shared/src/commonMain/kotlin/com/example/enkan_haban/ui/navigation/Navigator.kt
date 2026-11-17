@@ -15,6 +15,9 @@ sealed interface Route {
     data class ProductDetail(val productId: String) : Route
     data class Chat(val conversationId: String) : Route
     data object Chats : Route
+
+    /** Admin only: hand-made order of posts per category. */
+    data object AdminOrder : Route
 }
 
 /** Minimal back-stack navigator. Home is always the root. */

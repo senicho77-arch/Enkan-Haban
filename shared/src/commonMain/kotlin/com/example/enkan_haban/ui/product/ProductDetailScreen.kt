@@ -41,12 +41,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.enkan_haban.AppContainer
 import com.example.enkan_haban.data.MAX_MESSAGE_LENGTH
 import com.example.enkan_haban.data.isValidPhone
-import com.example.enkan_haban.domain.ListingType
 import com.example.enkan_haban.domain.Product
 import com.example.enkan_haban.ui.components.DiscountBadge
 import com.example.enkan_haban.ui.components.ListingTypeTag
@@ -69,7 +68,6 @@ private sealed interface DetailState {
 fun ProductDetailScreen(
     productId: String,
     onBack: () -> Unit,
-    onGoToCart: () -> Unit,
     onOpenChat: (conversationId: String) -> Unit,
 ) {
     val state by produceState<DetailState>(DetailState.Loading, productId) {
@@ -81,13 +79,15 @@ fun ProductDetailScreen(
         when (val s = state) {
             DetailState.Loading -> Box(Modifier.fillMaxSize(), Alignment.Center) { CircularProgressIndicator() }
             DetailState.NotFound -> Box(Modifier.fillMaxSize(), Alignment.Center) { Text("እዚ ኣቕሓ ድሕሪ ሕጂ የለን።") }
-            is DetailState.Loaded -> ProductDetailContent(s.product, onGoToCart, onOpenChat)
+            is DetailState.Loaded -> ProductDetailContent(s.product, onOpenChat)
         }
     }
 }
 
 @Composable
-private fun ProductDetailContent(product: Product, onGoToCart: () -> Unit, onOpenChat: (String) -> Unit) {
+private fun ProductDetailContent(product: Product, onOpenChat: (String) -> Unit) {
+    val savedItems by AppContainer.savedRepository.items.collectAsStateWithLifecycle()
+    val isSaved = savedItems.any { it.id == product.id }
     Column(Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier.weight(1f).verticalScroll(rememberScrollState()),
@@ -113,7 +113,7 @@ private fun ProductDetailContent(product: Product, onGoToCart: () -> Unit, onOpe
                     Text(formatPrice(it), textDecoration = TextDecoration.LineThrough, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 Text("📍 ${product.location}", style = MaterialTheme.typography.bodyMedium)
-                if (product.listingType == ListingType.CLASSIFIED) SafetyWarning()
+                SafetyWarning()
                 HorizontalDivider(Modifier.padding(vertical = 8.dp))
                 Text("መግለጺ", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                 Text(product.description, style = MaterialTheme.typography.bodyMedium)
@@ -125,7 +125,7 @@ private fun ProductDetailContent(product: Product, onGoToCart: () -> Unit, onOpe
                             product.seller.name + if (product.seller.isVerified) "  ✔ ዝተረጋገጸ" else "",
                             style = MaterialTheme.typography.titleMedium,
                         )
-                        if (product.listingType == ListingType.CLASSIFIED && product.seller.phone.isNotBlank()) {
+                        if (product.seller.phone.isNotBlank()) {
                             Text(
                                 "📞 ${product.seller.phone}",
                                 style = MaterialTheme.typography.bodyLarge,
@@ -142,38 +142,22 @@ private fun ProductDetailContent(product: Product, onGoToCart: () -> Unit, onOpe
                         }
                     }
                 }
-                if (product.listingType == ListingType.CLASSIFIED) ChatWithSellerCard(product, onOpenChat)
+                ChatWithSellerCard(product, onOpenChat)
             }
         }
         Surface(tonalElevation = 3.dp, shadowElevation = 8.dp) {
-            Box(Modifier.fillMaxWidth().padding(16.dp)) {
-                when (product.listingType) {
-                    ListingType.STORE -> StoreActions(product, onGoToCart)
-                    ListingType.CLASSIFIED -> ClassifiedActions(product)
-                }
+            Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                OutlinedButton(
+                    onClick = { AppContainer.savedRepository.toggle(product) },
+                    modifier = Modifier.fillMaxWidth(),
+                ) { Text(if (isSaved) "❤️ ኣብ ዘንቢል ኣሎ" else "🤍 ኣብ ዘንቢል ኣጽንሕ") }
+                ContactActions(product)
             }
         }
     }
 }
 
-@Composable
-private fun StoreActions(product: Product, onGoToCart: () -> Unit) {
-    var added by remember { mutableStateOf(false) }
-    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        Button(
-            onClick = {
-                AppContainer.cartRepository.add(product)
-                added = true
-            },
-            modifier = Modifier.weight(1f),
-        ) { Text(if (added) "ካልእ ወስኽ" else "ናብ ዘንቢል ወስኽ") }
-        if (added) {
-            OutlinedButton(onClick = onGoToCart, modifier = Modifier.weight(1f)) { Text("ናብ ዘንቢል ኪድ") }
-        }
-    }
-}
-
-/** Shown on every ad, like Jiji: the most common scam is "pay first, I'll deliver". */
+/** Shown on every product, like Jiji: the most common scam is "pay first, I'll deliver". */
 @Composable
 private fun SafetyWarning() {
     Surface(
@@ -234,11 +218,11 @@ private fun ChatWithSellerCard(product: Product, onOpenChat: (String) -> Unit) {
 }
 
 /**
- * Bottom bar of a classified ad, like Jiji: "request call back" next to a green button that
+ * Bottom bar of every product, like Jiji: "request call back" next to a green button that
  * shows the seller's number and opens the dialer in one tap.
  */
 @Composable
-private fun ClassifiedActions(product: Product) {
+private fun ContactActions(product: Product) {
     val uriHandler = LocalUriHandler.current
     val phone = product.seller.phone
     val requests by AppContainer.chatRepository.callbackRequests.collectAsStateWithLifecycle()

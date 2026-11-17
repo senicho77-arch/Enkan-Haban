@@ -73,7 +73,9 @@ import org.jetbrains.compose.resources.painterResource
 fun HomeScreen(
     onProductClick: (String) -> Unit,
     onSellClick: () -> Unit = {},
-    viewModel: HomeViewModel = viewModel { HomeViewModel(AppContainer.productRepository) },
+    viewModel: HomeViewModel = viewModel {
+        HomeViewModel(AppContainer.productRepository, AppContainer.adminRepository, AppContainer.showPinnedBadge)
+    },
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
 
@@ -177,7 +179,7 @@ fun HomeScreen(
             }
 
             items(state.products, key = { it.id }) { product ->
-                ProductCard(product, onClick = { onProductClick(product.id) })
+                ProductCard(product, onClick = { onProductClick(product.id) }, pinned = product.id in state.pinnedIds)
             }
         }
     }
