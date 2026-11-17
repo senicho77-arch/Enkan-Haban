@@ -1,10 +1,10 @@
 package com.example.enkan_haban
 
 import com.example.enkan_haban.data.AdminRepository
-import com.example.enkan_haban.data.CartRepository
 import com.example.enkan_haban.data.InMemoryAdminRepository
 import com.example.enkan_haban.data.InMemoryProductRepository
 import com.example.enkan_haban.data.ProductRepository
+import com.example.enkan_haban.data.SavedRepository
 import com.example.enkan_haban.domain.Seller
 import com.example.enkan_haban.ui.navigation.Navigator
 
@@ -22,7 +22,8 @@ object AppContainer {
 
     val productRepository: ProductRepository by lazy { InMemoryProductRepository() }
     val adminRepository: AdminRepository by lazy { InMemoryAdminRepository(isAdmin = DEMO_USER_IS_ADMIN) }
-    val cartRepository: CartRepository by lazy { CartRepository() }
+    /** The ዘንቢል tab: products buyers picked to contact the seller later. */
+    val savedRepository: SavedRepository by lazy { SavedRepository() }
     val navigator: Navigator by lazy { Navigator() }
 
     /** Placeholder until authentication is added. */

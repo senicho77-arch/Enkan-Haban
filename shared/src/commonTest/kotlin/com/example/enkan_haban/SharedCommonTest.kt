@@ -4,6 +4,7 @@ import com.example.enkan_haban.data.CartRepository
 import com.example.enkan_haban.data.InMemoryAdminRepository
 import com.example.enkan_haban.data.InMemoryProductRepository
 import com.example.enkan_haban.data.SampleData
+import com.example.enkan_haban.data.SavedRepository
 import com.example.enkan_haban.data.filterProducts
 import com.example.enkan_haban.data.itemCount
 import com.example.enkan_haban.data.orderForCategory
@@ -297,5 +298,37 @@ class AdminListingOrderTest {
         }
         assertTrue(error != null)
         assertTrue(admin.observePlacements().value.isEmpty())
+    }
+}
+
+class SavedRepositoryTest {
+    private val storeProduct = SampleData.products.first { it.listingType == ListingType.STORE }
+    private val adProduct = SampleData.products.first { it.listingType == ListingType.CLASSIFIED }
+
+    @Test
+    fun toggleAddsThenRemoves() {
+        val saved = SavedRepository()
+        saved.toggle(storeProduct)
+        assertTrue(saved.contains(storeProduct.id))
+        saved.toggle(storeProduct)
+        assertFalse(saved.contains(storeProduct.id))
+        assertTrue(saved.items.value.isEmpty())
+    }
+
+    @Test
+    fun storeAndClassifiedCanBothBeSavedNewestFirst() {
+        val saved = SavedRepository()
+        saved.toggle(storeProduct)
+        saved.toggle(adProduct)
+        assertEquals(listOf(adProduct.id, storeProduct.id), saved.items.value.map { it.id })
+    }
+
+    @Test
+    fun removeById() {
+        val saved = SavedRepository()
+        saved.toggle(storeProduct)
+        saved.toggle(adProduct)
+        saved.remove(storeProduct.id)
+        assertEquals(listOf(adProduct.id), saved.items.value.map { it.id })
     }
 }

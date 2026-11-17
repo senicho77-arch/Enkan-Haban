@@ -21,10 +21,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -32,8 +29,8 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.enkan_haban.AppContainer
-import com.example.enkan_haban.domain.ListingType
 import com.example.enkan_haban.domain.Product
 import com.example.enkan_haban.ui.components.DiscountBadge
 import com.example.enkan_haban.ui.components.ListingTypeTag
@@ -53,7 +50,7 @@ private sealed interface DetailState {
 }
 
 @Composable
-fun ProductDetailScreen(productId: String, onBack: () -> Unit, onGoToCart: () -> Unit) {
+fun ProductDetailScreen(productId: String, onBack: () -> Unit) {
     val state by produceState<DetailState>(DetailState.Loading, productId) {
         value = AppContainer.productRepository.getProduct(productId)?.let { DetailState.Loaded(it) } ?: DetailState.NotFound
     }
@@ -63,13 +60,15 @@ fun ProductDetailScreen(productId: String, onBack: () -> Unit, onGoToCart: () ->
         when (val s = state) {
             DetailState.Loading -> Box(Modifier.fillMaxSize(), Alignment.Center) { CircularProgressIndicator() }
             DetailState.NotFound -> Box(Modifier.fillMaxSize(), Alignment.Center) { Text("እዚ ኣቕሓ ድሕሪ ሕጂ የለን።") }
-            is DetailState.Loaded -> ProductDetailContent(s.product, onGoToCart)
+            is DetailState.Loaded -> ProductDetailContent(s.product)
         }
     }
 }
 
 @Composable
-private fun ProductDetailContent(product: Product, onGoToCart: () -> Unit) {
+private fun ProductDetailContent(product: Product) {
+    val savedItems by AppContainer.savedRepository.items.collectAsStateWithLifecycle()
+    val isSaved = savedItems.any { it.id == product.id }
     Column(Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier.weight(1f).verticalScroll(rememberScrollState()),
@@ -95,7 +94,7 @@ private fun ProductDetailContent(product: Product, onGoToCart: () -> Unit) {
                     Text(formatPrice(it), textDecoration = TextDecoration.LineThrough, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 Text("📍 ${product.location}", style = MaterialTheme.typography.bodyMedium)
-                if (product.listingType == ListingType.CLASSIFIED) SafetyWarning()
+                SafetyWarning()
                 HorizontalDivider(Modifier.padding(vertical = 8.dp))
                 Text("መግለጺ", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                 Text(product.description, style = MaterialTheme.typography.bodyMedium)
@@ -107,7 +106,7 @@ private fun ProductDetailContent(product: Product, onGoToCart: () -> Unit) {
                             product.seller.name + if (product.seller.isVerified) "  ✔ ዝተረጋገጸ" else "",
                             style = MaterialTheme.typography.titleMedium,
                         )
-                        if (product.listingType == ListingType.CLASSIFIED && product.seller.phone.isNotBlank()) {
+                        if (product.seller.phone.isNotBlank()) {
                             Text(
                                 "📞 ${product.seller.phone}",
                                 style = MaterialTheme.typography.bodyLarge,
@@ -119,34 +118,18 @@ private fun ProductDetailContent(product: Product, onGoToCart: () -> Unit) {
             }
         }
         Surface(tonalElevation = 3.dp, shadowElevation = 8.dp) {
-            Box(Modifier.fillMaxWidth().padding(16.dp)) {
-                when (product.listingType) {
-                    ListingType.STORE -> StoreActions(product, onGoToCart)
-                    ListingType.CLASSIFIED -> ClassifiedActions(product)
-                }
+            Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                OutlinedButton(
+                    onClick = { AppContainer.savedRepository.toggle(product) },
+                    modifier = Modifier.fillMaxWidth(),
+                ) { Text(if (isSaved) "❤️ ኣብ ዘንቢል ኣሎ" else "🤍 ኣብ ዘንቢል ኣጽንሕ") }
+                ContactActions(product)
             }
         }
     }
 }
 
-@Composable
-private fun StoreActions(product: Product, onGoToCart: () -> Unit) {
-    var added by remember { mutableStateOf(false) }
-    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        Button(
-            onClick = {
-                AppContainer.cartRepository.add(product)
-                added = true
-            },
-            modifier = Modifier.weight(1f),
-        ) { Text(if (added) "ካልእ ወስኽ" else "ናብ ዘንቢል ወስኽ") }
-        if (added) {
-            OutlinedButton(onClick = onGoToCart, modifier = Modifier.weight(1f)) { Text("ናብ ዘንቢል ኪድ") }
-        }
-    }
-}
-
-/** Shown on every ad, like Jiji: the most common scam is "pay first, I'll deliver". */
+/** Shown on every product, like Jiji: the most common scam is "pay first, I'll deliver". */
 @Composable
 private fun SafetyWarning() {
     Surface(
@@ -168,7 +151,7 @@ private fun SafetyWarning() {
  * opens the phone's dialer. WhatsApp appears when the number has a country code.
  */
 @Composable
-private fun ClassifiedActions(product: Product) {
+private fun ContactActions(product: Product) {
     val uriHandler = LocalUriHandler.current
     val phone = product.seller.phone
     val whatsapp = whatsappUri(phone)
