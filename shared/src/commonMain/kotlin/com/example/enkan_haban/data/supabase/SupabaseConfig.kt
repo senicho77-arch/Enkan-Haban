@@ -12,8 +12,8 @@ package com.example.enkan_haban.data.supabase
  * While either is empty the app runs on demo data (InMemory repositories).
  */
 object SupabaseConfig {
-    const val URL = ""
-    const val ANON_KEY = ""
+    const val URL = "https://tcubokttkfwrsowgznse.supabase.co"
+    const val ANON_KEY = "sb_publishable_LoWZi6eq2wGypYsJGb6yXw_IovHb_Lf"
 
     /** Google sign-in returns to the app through enkanhaban://login-callback (add it in Supabase → Auth → URL Configuration). */
     const val AUTH_SCHEME = "enkanhaban"
