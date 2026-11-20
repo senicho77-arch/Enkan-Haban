@@ -1,5 +1,6 @@
 package com.example.enkan_haban
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.addCallback
@@ -22,9 +23,17 @@ class MainActivity : ComponentActivity() {
             }
         }
 
+        // Google sign-in comes back here (enkanhaban://login-callback).
+        handleAuthDeeplink(intent)
+
         setContent {
             App()
         }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        handleAuthDeeplink(intent)
     }
 }
 

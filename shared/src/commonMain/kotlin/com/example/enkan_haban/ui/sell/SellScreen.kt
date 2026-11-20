@@ -149,6 +149,9 @@ private fun SellFormContent(
         state.loadError?.let {
             Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
         }
+        state.submitError?.let {
+            Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
+        }
         Button(
             onClick = { viewModel.submit(onDone) },
             enabled = !state.isSubmitting,

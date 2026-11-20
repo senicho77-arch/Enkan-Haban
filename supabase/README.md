@@ -60,6 +60,16 @@ insert into public.admins (user_id) values ('<owner auth user id>');
 | Take one listing out | `rpc("admin_unpin_listing", p_category_id, p_listing_id)` |
 | Show the order (admin screen) | `rpc("admin_get_category_order", p_category_id)` → id, title, position, pinned_until, is_expired |
 
+## ኣፕ ምስ Supabase ምትእስሳር / Connect the app
+1. Supabase → **Project Settings → API** (or the green **Connect** button at the top):
+   copy the **Project URL** and the **anon public / publishable** key.
+2. In Android Studio open `shared/src/commonMain/kotlin/com/example/enkan_haban/data/supabase/SupabaseConfig.kt`
+   and paste them into `URL` and `ANON_KEY`. Never use the **service_role / secret** key.
+3. Supabase → **Authentication → URL Configuration → Redirect URLs** → add `enkanhaban://login-callback`.
+4. Supabase → **Authentication → Providers → Google**: enabled, with the Client ID/Secret of a Google Cloud
+   **Web application** OAuth client whose redirect URI is `https://<project>.supabase.co/auth/v1/callback`.
+With `URL`/`ANON_KEY` empty the app runs on demo data.
+
 ## ንኣፕ / Notes for the app
 | Need | Call |
 |---|---|

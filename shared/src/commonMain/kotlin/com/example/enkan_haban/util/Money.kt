@@ -4,6 +4,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import kotlin.math.abs
+import kotlin.math.pow
 import kotlin.math.roundToLong
 
 /**
@@ -47,6 +48,17 @@ fun convertFromUsdCents(usdCents: Long, currency: Currency): Long = when (curren
         val raw = (usdCents / 100.0 * currency.unitsPerUsd).roundToLong()
         if (currency.roundTo > 1) ((raw + currency.roundTo / 2) / currency.roundTo) * currency.roundTo else raw
     }
+}
+
+/**
+ * Converts an amount as the database stores it (smallest unit of [currencyCode], e.g. UGX 45000
+ * or USD cents) to the US cents the app uses. Null for currencies the app can't show yet.
+ */
+fun minorToUsdCents(amountMinor: Long, currencyCode: String): Long? {
+    val currency = Currency.entries.firstOrNull { it.code == currencyCode } ?: return null
+    if (currency == Currency.USD) return amountMinor
+    val units = amountMinor / 10.0.pow(currency.decimals)
+    return (units / currency.unitsPerUsd * 100).roundToLong()
 }
 
 /**

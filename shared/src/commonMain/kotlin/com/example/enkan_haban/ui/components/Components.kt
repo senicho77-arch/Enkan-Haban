@@ -39,6 +39,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.enkan_haban.AppContainer
+import coil3.compose.AsyncImage
 import com.example.enkan_haban.data.SampleData
 import com.example.enkan_haban.domain.ListingType
 import com.example.enkan_haban.domain.Photo
@@ -68,7 +69,9 @@ fun ProductImage(product: Product, modifier: Modifier = Modifier, emojiSize: Int
         PhotoImage(photo, modifier)
         return
     }
-    val emoji = SampleData.categories.firstOrNull { it.id == product.categoryId }?.emoji ?: "📦"
+    val emoji = AppContainer.productRepository.categories.firstOrNull { it.id == product.categoryId }?.emoji
+        ?: SampleData.categories.firstOrNull { it.id == product.categoryId }?.emoji
+        ?: "📦"
     val colors = categoryColors(product.categoryId)
     Box(
         modifier = modifier.background(Brush.linearGradient(colors)),
@@ -82,6 +85,15 @@ fun ProductImage(product: Product, modifier: Modifier = Modifier, emojiSize: Int
                 .background(Color.White.copy(alpha = 0.45f)),
         )
         Text(emoji, fontSize = emojiSize.sp)
+        // Uploaded photo from Supabase Storage on top; the emoji shows while it loads or if it fails.
+        product.imageUrls.firstOrNull()?.let { url ->
+            AsyncImage(
+                model = url,
+                contentDescription = product.title,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.matchParentSize(),
+            )
+        }
     }
 }
 

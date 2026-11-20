@@ -8,5 +8,16 @@
 	<string>እንካን ሃባን | Enkan Haban</string>
 	<key>CFBundleName</key>
 	<string>Enkan Haban</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>login-callback</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>enkanhaban</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>

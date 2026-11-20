@@ -12,6 +12,7 @@ import com.example.enkan_haban.util.Currency
 import com.example.enkan_haban.util.CurrencySettings
 import com.example.enkan_haban.util.formatPriceInput
 import com.example.enkan_haban.util.parsePrice
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -65,6 +66,8 @@ data class SellUiState(
     val loadError: String? = null,
     val errors: Map<String, String> = emptyMap(),
     val isSubmitting: Boolean = false,
+    /** Shown above the post button when posting failed (e.g. no internet). */
+    val submitError: String? = null,
     /** Shown under the photos, e.g. when some picked photos didn't fit. */
     val photoMessage: String? = null,
 ) {
@@ -156,7 +159,7 @@ class SellViewModel(
             _uiState.update { it.copy(errors = errors) }
             return
         }
-        _uiState.update { it.copy(isSubmitting = true) }
+        _uiState.update { it.copy(isSubmitting = true, submitError = null) }
         viewModelScope.launch {
             val draft = ListingDraft(
                 title = form.title.trim(),
@@ -169,18 +172,24 @@ class SellViewModel(
                 photos = form.photos,
             )
             val editing = state.editing
-            if (editing == null) {
-                val product = repository.createListing(draft, seller)
-                _uiState.value = SellUiState()
-                onDone(product.id)
-            } else {
-                val product = repository.updateListing(editing.productId, draft, seller)
-                if (product == null) {
-                    _uiState.update { it.copy(isSubmitting = false, loadError = "ለውጢ ኣይተዓቀበን — እዚ ኣቕሓ የለን") }
-                } else {
-                    _uiState.update { it.copy(isSubmitting = false) }
+            try {
+                if (editing == null) {
+                    val product = repository.createListing(draft, seller)
+                    _uiState.value = SellUiState()
                     onDone(product.id)
+                } else {
+                    val product = repository.updateListing(editing.productId, draft, seller)
+                    if (product == null) {
+                        _uiState.update { it.copy(isSubmitting = false, loadError = "ለውጢ ኣይተዓቀበን — እዚ ኣቕሓ የለን") }
+                    } else {
+                        _uiState.update { it.copy(isSubmitting = false) }
+                        onDone(product.id)
+                    }
                 }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _uiState.update { it.copy(isSubmitting = false, submitError = e.message ?: "ኣይተዓወተን — ደጊምካ ፈትን") }
             }
         }
     }

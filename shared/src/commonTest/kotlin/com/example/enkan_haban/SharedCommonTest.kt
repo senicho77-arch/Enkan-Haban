@@ -29,6 +29,7 @@ import com.example.enkan_haban.ui.sell.mergePhotos
 import com.example.enkan_haban.ui.sell.validate
 import com.example.enkan_haban.util.Currency
 import com.example.enkan_haban.util.formatPrice
+import com.example.enkan_haban.util.minorToUsdCents
 import com.example.enkan_haban.util.formatPriceInput
 import com.example.enkan_haban.util.formatTotal
 import com.example.enkan_haban.util.parsePrice
@@ -445,5 +446,16 @@ class EditListingTest {
         assertEquals(1_205L, resolvePrice(SellForm(price = text), editing, Currency.UGX))
         assertEquals(parsePrice("50,000", Currency.UGX), resolvePrice(SellForm(price = "50,000"), editing, Currency.UGX))
         assertEquals(parsePrice(text, Currency.UGX), resolvePrice(SellForm(price = text), null, Currency.UGX))
+    }
+}
+
+class DatabasePriceTest {
+    @Test
+    fun convertsDatabaseAmountsToUsdCents() {
+        assertEquals(1_250L, minorToUsdCents(1_250, "USD"))
+        // UGX 45,000 is stored as 45000 and shows again as UGX 45,000.
+        val cents = minorToUsdCents(45_000, "UGX")!!
+        assertEquals("UGX 45,000", formatPrice(cents, Currency.UGX))
+        assertNull(minorToUsdCents(100, "XYZ"))
     }
 }
