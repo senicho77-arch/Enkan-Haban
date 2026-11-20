@@ -54,6 +54,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.enkan_haban.AppContainer
 import com.example.enkan_haban.domain.Category
+import com.example.enkan_haban.domain.PromoBanner
 import com.example.enkan_haban.resources.Res
 import com.example.enkan_haban.resources.enkan_haban_logo
 import com.example.enkan_haban.ui.components.CurrencyToggle
@@ -62,7 +63,6 @@ import com.example.enkan_haban.ui.components.SectionHeader
 import com.example.enkan_haban.ui.components.softShadow
 import com.example.enkan_haban.ui.theme.Gold
 import com.example.enkan_haban.ui.theme.HeaderGradient
-import com.example.enkan_haban.ui.theme.Navy
 import com.example.enkan_haban.ui.theme.NavyDeep
 import com.example.enkan_haban.ui.theme.SkyBlue
 import com.example.enkan_haban.ui.theme.categoryColors
@@ -74,40 +74,15 @@ fun HomeScreen(
     onProductClick: (String) -> Unit,
     onSellClick: () -> Unit = {},
     viewModel: HomeViewModel = viewModel {
-        HomeViewModel(AppContainer.productRepository, AppContainer.adminRepository, AppContainer.showPinnedBadge)
+        HomeViewModel(
+            AppContainer.productRepository,
+            AppContainer.adminRepository,
+            AppContainer.promoRepository,
+            AppContainer.showPinnedBadge,
+        )
     },
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-
-    val promos = listOf(
-        Promo(
-            tag = "🔥 ዓቢ ቅናሽ",
-            title = "ክሳብ 40% ቅናሽ",
-            subtitle = "ኣብ ተሌፎናትን ኤሌክትሮኒክስን",
-            cta = "ሕጂ ግዛእ",
-            emoji = "📱",
-            colors = listOf(Color(0xFF3FA9E8), Color(0xFF1B5E8C)),
-            onClick = { viewModel.selectCategory("phones") },
-        ),
-        Promo(
-            tag = "✨ ሓድሽ",
-            title = "ብናጻ ሸይጥ",
-            subtitle = "ኣቕሑኻ ኣብ ሓንቲ ደቒቕ ኣእትዎ — ንሓበሻ ኣብ ዓለም",
-            cta = "ሕጂ ጀምር",
-            emoji = "🛍️",
-            colors = listOf(Color(0xFF7A5AF8), Color(0xFF3B2A99)),
-            onClick = onSellClick,
-        ),
-        Promo(
-            tag = "📢 ስፖንሰር · መዋዓውዒ",
-            title = "ባህላዊ ክዳን ሓበሻ",
-            subtitle = "ብኢድ ዝተሰርሐ ጥበብ፡ ንበዓልን ንመርዓን",
-            cta = "ርአ",
-            emoji = "👗",
-            colors = listOf(Color(0xFFF59E3D), Color(0xFFC2410C)),
-            onClick = { viewModel.selectCategory("fashion") },
-        ),
-    )
 
     Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         HomeHeader(query = state.query, onQueryChange = viewModel::onQueryChange)
@@ -126,7 +101,16 @@ fun HomeScreen(
                         Text("እንታይ ክትገዝእ ትደሊ ሎሚ?", style = MaterialTheme.typography.headlineSmall)
                     }
                 }
-                fullWidth { PromoCarousel(promos) }
+                if (state.promos.isNotEmpty()) {
+                    fullWidth {
+                        PromoCarousel(state.promos) { banner ->
+                            when {
+                                banner.targetProductId != null -> onProductClick(banner.targetProductId)
+                                banner.targetCategoryId != null -> viewModel.selectCategory(banner.targetCategoryId)
+                            }
+                        }
+                    }
+                }
             }
 
             fullWidth {
@@ -248,29 +232,20 @@ private fun HomeHeader(query: String, onQueryChange: (String) -> Unit) {
 
 // ── Promo banners ────────────────────────────────────────────────────────────
 
-private data class Promo(
-    val tag: String,
-    val title: String,
-    val subtitle: String,
-    val cta: String,
-    val emoji: String,
-    val colors: List<Color>,
-    val onClick: () -> Unit,
-)
-
 @Composable
-private fun PromoCarousel(promos: List<Promo>) {
+private fun PromoCarousel(promos: List<PromoBanner>, onClick: (PromoBanner) -> Unit) {
     val pagerState = rememberPagerState(pageCount = { promos.size })
 
     // Auto-advance every 4 seconds; restarts the timer after each page change.
-    LaunchedEffect(pagerState.currentPage) {
+    LaunchedEffect(pagerState.currentPage, promos.size) {
+        if (promos.size < 2) return@LaunchedEffect
         delay(4_000)
         pagerState.animateScrollToPage((pagerState.currentPage + 1) % promos.size)
     }
 
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         HorizontalPager(state = pagerState, pageSpacing = 12.dp, modifier = Modifier.fillMaxWidth()) { page ->
-            PromoBanner(promos[page])
+            PromoBannerCard(promos[page], onClick = { onClick(promos[page]) })
         }
         Spacer(Modifier.height(10.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -289,62 +264,6 @@ private fun PromoCarousel(promos: List<Promo>) {
     }
 }
 
-@Composable
-private fun PromoBanner(promo: Promo) {
-    val shape = RoundedCornerShape(26.dp)
-    Box(
-        Modifier
-            .fillMaxWidth()
-            .height(168.dp)
-            .softShadow(10.dp, shape)
-            .clip(shape)
-            .background(Brush.linearGradient(promo.colors))
-            .drawBehind {
-                drawCircle(Color.White.copy(alpha = 0.12f), radius = size.height * 0.75f, center = Offset(size.width * 0.86f, size.height * 0.55f))
-                drawCircle(Color.White.copy(alpha = 0.08f), radius = size.height * 0.35f, center = Offset(size.width * 0.55f, -size.height * 0.05f))
-            }
-            .clickable(onClick = promo.onClick),
-    ) {
-        Text(
-            promo.emoji,
-            fontSize = 74.sp,
-            modifier = Modifier.align(Alignment.CenterEnd).padding(end = 22.dp),
-        )
-        Column(
-            Modifier.fillMaxHeight().fillMaxWidth(0.66f).padding(18.dp),
-            verticalArrangement = Arrangement.SpaceBetween,
-        ) {
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Surface(color = Color.White.copy(alpha = 0.22f), shape = RoundedCornerShape(50)) {
-                    Text(
-                        promo.tag,
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White,
-                        modifier = Modifier.padding(horizontal = 9.dp, vertical = 3.dp),
-                    )
-                }
-                Text(promo.title, style = MaterialTheme.typography.headlineSmall, color = Color.White, maxLines = 1)
-                Text(
-                    promo.subtitle,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Color.White.copy(alpha = 0.88f),
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
-            Surface(onClick = promo.onClick, color = Color.White, shape = RoundedCornerShape(50)) {
-                Text(
-                    "${promo.cta}  →",
-                    style = MaterialTheme.typography.labelLarge,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = Navy,
-                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp),
-                )
-            }
-        }
-    }
-}
 
 // ── Categories ───────────────────────────────────────────────────────────────
 

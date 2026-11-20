@@ -8,7 +8,8 @@
 | `migrations/20261027000200_reference_data.sql` | ባጤራታት (UGX, ETB, ERN, USD, EUR…) ን ምድብታት ብትግርኛን እንግሊዝኛን |
 | `migrations/20261028000000_hardening.sql` | ውሕስነት ምድልዳል — security fixes found by testing (see below) |
 | `migrations/20261031000000_admin_listing_order.sql` | ኣድሚን መስርዕ ፖስትታት ኣብ ነፍሲ ወከፍ ምድብ ይውስን — admin-controlled listing order per category |
-| `tests/` | 80 tests that act as real users (`tests/run.sh`) |
+| `migrations/20261120000000_promo_banners.sql` | ስእሊ ማስታወቂያ ኣብ ገጽ መበገሲ — advert banners, admins only (+ pictures in `listing-images/promos/`) |
+| `tests/` | 102 tests that act as real users (`tests/run.sh`) |
 
 ## ሰሌዳታት (tables)
 - **profiles** — ተጠቀምቲ (ብ Google ምስ ኣተዉ ባዕሉ ይፍጠር)
@@ -58,6 +59,7 @@ insert into public.admins (user_id) values ('<owner auth user id>');
 | Replace a category's whole order | `rpc("admin_set_category_order", p_category_id, p_listing_ids)` — empty array clears it; keeps existing `pinned_until` |
 | Put one listing at a position | `rpc("admin_pin_listing", p_category_id, p_listing_id, p_position = 1, p_pinned_until = null)` |
 | Take one listing out | `rpc("admin_unpin_listing", p_category_id, p_listing_id)` |
+| Home advert banners | `from("promo_banners")` — everyone reads live ones; insert/update/delete only works for admins |
 | Show the order (admin screen) | `rpc("admin_get_category_order", p_category_id)` → id, title, position, pinned_until, is_expired |
 
 ## ኣፕ ምስ Supabase ምትእስሳር / Connect the app

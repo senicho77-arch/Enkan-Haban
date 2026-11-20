@@ -4,11 +4,14 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.enkan_haban.data.AdminRepository
 import com.example.enkan_haban.data.ProductRepository
+import com.example.enkan_haban.data.PromoRepository
 import com.example.enkan_haban.data.filterProducts
+import com.example.enkan_haban.data.liveBanners
 import com.example.enkan_haban.data.orderForCategory
 import com.example.enkan_haban.domain.ALL_CATEGORIES
 import com.example.enkan_haban.domain.Category
 import com.example.enkan_haban.domain.Product
+import com.example.enkan_haban.domain.PromoBanner
 import com.example.enkan_haban.util.nowEpochMs
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -25,6 +28,8 @@ data class HomeUiState(
     val deals: List<Product> = emptyList(),
     /** Products the admin placed in the current view; only filled when the 📌 badge is enabled. */
     val pinnedIds: Set<String> = emptySet(),
+    /** Advert banners posted by the admin, live right now, in order. */
+    val promos: List<PromoBanner> = emptyList(),
 ) {
     /** Banners and deal rows only show on the plain home feed, not while filtering. */
     val isBrowsing: Boolean get() = query.isBlank() && selectedCategoryId == null
@@ -33,6 +38,7 @@ data class HomeUiState(
 class HomeViewModel(
     repository: ProductRepository,
     adminRepository: AdminRepository,
+    promoRepository: PromoRepository,
     private val showPinnedBadge: Boolean = false,
 ) : ViewModel() {
     private val query = MutableStateFlow("")
@@ -40,8 +46,8 @@ class HomeViewModel(
 
     val uiState: StateFlow<HomeUiState> =
         combine(
-            repository.observeProducts(), adminRepository.observePlacements(), query, selectedCategoryId,
-        ) { products, placements, q, categoryId ->
+            repository.observeProducts(), adminRepository.observePlacements(), promoRepository.banners, query, selectedCategoryId,
+        ) { products, placements, banners, q, categoryId ->
             val filtered = filterProducts(products, q, categoryId)
             val categoryKey = categoryId ?: ALL_CATEGORIES
             // Browsing: the admin's order for this category comes first. Searching: keep match order.
@@ -55,6 +61,7 @@ class HomeViewModel(
                 selectedCategoryId = categoryId,
                 categories = repository.categories,
                 products = shown,
+                promos = liveBanners(banners, nowEpochMs()),
                 deals = products.filter { it.discountPercent != null }.sortedByDescending { it.discountPercent },
                 pinnedIds = if (showPinnedBadge && q.isBlank()) {
                     val now = nowEpochMs()

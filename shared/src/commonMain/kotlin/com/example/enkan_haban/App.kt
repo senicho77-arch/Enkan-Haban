@@ -20,6 +20,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.enkan_haban.ui.account.AccountScreen
 import com.example.enkan_haban.ui.admin.AdminOrderScreen
+import com.example.enkan_haban.ui.admin.PromoAdminScreen
 import com.example.enkan_haban.ui.chat.ChatListScreen
 import com.example.enkan_haban.ui.chat.ChatScreen
 import com.example.enkan_haban.ui.home.HomeScreen
@@ -93,8 +94,10 @@ fun App(navigator: Navigator = AppContainer.navigator) {
                     Route.Account -> AccountScreen(
                         onOpenChats = { navigator.navigate(Route.Chats) },
                         onAdminOrderClick = { navigator.navigate(Route.AdminOrder) },
+                        onPromoAdminClick = { navigator.navigate(Route.PromoAdmin) },
                     )
                     Route.AdminOrder -> AdminOrderScreen(onBack = { navigator.goBack() })
+                    Route.PromoAdmin -> PromoAdminScreen(onBack = { navigator.goBack() })
                     is Route.ProductDetail -> ProductDetailScreen(
                         productId = route.productId,
                         onBack = { navigator.goBack() },

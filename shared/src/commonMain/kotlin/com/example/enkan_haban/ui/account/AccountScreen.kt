@@ -29,7 +29,11 @@ import com.example.enkan_haban.util.CurrencySettings
 import kotlinx.coroutines.launch
 
 @Composable
-fun AccountScreen(onOpenChats: () -> Unit, onAdminOrderClick: () -> Unit = {}) {
+fun AccountScreen(
+    onOpenChats: () -> Unit,
+    onAdminOrderClick: () -> Unit = {},
+    onPromoAdminClick: () -> Unit = {},
+) {
     val isAdmin by AppContainer.adminRepository.isAdmin.collectAsStateWithLifecycle()
     val auth = AppContainer.authRepository
     val signedInUser by auth.currentUser.collectAsStateWithLifecycle()
@@ -84,10 +88,17 @@ fun AccountScreen(onOpenChats: () -> Unit, onAdminOrderClick: () -> Unit = {}) {
                 }
             }
             if (isAdmin) {
-                Card(onClick = onAdminOrderClick, modifier = Modifier.fillMaxWidth()) {
+                Card(Modifier.fillMaxWidth()) {
+                    ListItem(
+                        headlineContent = { Text("📢  ምሕደራ ማስታወቂያ") },
+                        supportingContent = { Text("ኣብ ላዕሊ ገጽ መበገሲ ዝርአ ስእሊ ማስታወቂያ ለጥፍ") },
+                        modifier = Modifier.clickable(onClick = onPromoAdminClick),
+                    )
+                    HorizontalDivider()
                     ListItem(
                         headlineContent = { Text("🛠️  ምሕደራ መስርዕ") },
                         supportingContent = { Text("ኣብ ነፍሲ ወከፍ ዓይነት መስርዕ ፖስትታት ወስን") },
+                        modifier = Modifier.clickable(onClick = onAdminOrderClick),
                     )
                 }
             }

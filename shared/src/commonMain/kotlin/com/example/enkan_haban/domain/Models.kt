@@ -114,3 +114,35 @@ data class Placement(
 ) {
     fun isExpired(nowMs: Long): Boolean = pinnedUntilEpochMs != null && pinnedUntilEpochMs <= nowMs
 }
+
+/**
+ * An advert banner in the home screen carousel. Only admins create, change or delete them
+ * (backend: public.promo_banners). Shown while [isActive] and inside [startsAtMs]..[endsAtMs].
+ */
+data class PromoBanner(
+    val id: String = "",
+    /** Uploaded picture (Supabase Storage); shown full-size when set. */
+    val imageUrl: String? = null,
+    /** Picture picked on this phone and not uploaded yet (demo mode keeps it here). */
+    val localImage: Photo? = null,
+    val tag: String = "",
+    val title: String = "",
+    val subtitle: String = "",
+    val cta: String = "",
+    val emoji: String = "",
+    /** "#RRGGBB" gradient used when there is no picture. */
+    val colorStart: String = "#3FA9E8",
+    val colorEnd: String = "#1B5E8C",
+    /** A tap opens this category, or this product, or nothing. */
+    val targetCategoryId: String? = null,
+    val targetProductId: String? = null,
+    val sortOrder: Int = 0,
+    val isActive: Boolean = true,
+    val startsAtMs: Long? = null,
+    val endsAtMs: Long? = null,
+) {
+    val hasPicture: Boolean get() = imageUrl != null || localImage != null
+
+    fun isLive(nowMs: Long): Boolean =
+        isActive && (startsAtMs == null || startsAtMs <= nowMs) && (endsAtMs == null || endsAtMs > nowMs)
+}

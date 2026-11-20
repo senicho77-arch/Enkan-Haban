@@ -7,13 +7,16 @@ import com.example.enkan_haban.data.DemoAuthRepository
 import com.example.enkan_haban.data.InMemoryAdminRepository
 import com.example.enkan_haban.data.InMemoryChatRepository
 import com.example.enkan_haban.data.InMemoryProductRepository
+import com.example.enkan_haban.data.InMemoryPromoRepository
 import com.example.enkan_haban.data.ProductRepository
+import com.example.enkan_haban.data.PromoRepository
 import com.example.enkan_haban.data.SavedRepository
 import com.example.enkan_haban.data.supabase.Supabase
 import com.example.enkan_haban.data.supabase.SupabaseAdminRepository
 import com.example.enkan_haban.data.supabase.SupabaseAuthRepository
 import com.example.enkan_haban.data.supabase.SupabaseConfig
 import com.example.enkan_haban.data.supabase.SupabaseProductRepository
+import com.example.enkan_haban.data.supabase.SupabasePromoRepository
 import com.example.enkan_haban.domain.Seller
 import com.example.enkan_haban.ui.navigation.Navigator
 import kotlinx.coroutines.CoroutineScope
@@ -52,6 +55,11 @@ object AppContainer {
         } else {
             InMemoryAdminRepository(isAdmin = DEMO_USER_IS_ADMIN)
         }
+    }
+    /** Advert banners on the home screen; only admins post them. */
+    val promoRepository: PromoRepository by lazy {
+        if (useSupabase) SupabasePromoRepository(Supabase.client, appScope)
+        else InMemoryPromoRepository(isAdmin = { adminRepository.isAdmin.value })
     }
     val chatRepository: ChatRepository by lazy { InMemoryChatRepository() }
     /** The ዘንቢል tab: products buyers picked to contact the seller later. */

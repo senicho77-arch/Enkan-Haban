@@ -19,6 +19,9 @@ sealed interface Route {
     /** Admin only: hand-made order of posts per category. */
     data object AdminOrder : Route
 
+    /** Admin only: advert banners on the home screen. */
+    data object PromoAdmin : Route
+
     /**
      * The seller editing their own ad. [visit] differs on every open, so each visit gets a
      * fresh form instead of unsaved edits left over from the last one.

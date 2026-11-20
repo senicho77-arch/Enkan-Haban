@@ -62,3 +62,23 @@ internal data class PlacementRow(
     val position: Int,
     @SerialName("pinned_until") val pinnedUntil: String? = null,
 )
+
+@Serializable
+internal data class PromoRow(
+    val id: String,
+    @SerialName("image_path") val imagePath: String? = null,
+    val tag: String = "",
+    val title: String = "",
+    val subtitle: String = "",
+    val cta: String = "",
+    val emoji: String = "",
+    @SerialName("color_start") val colorStart: String = "#3FA9E8",
+    @SerialName("color_end") val colorEnd: String = "#1B5E8C",
+    @SerialName("target_category_id") val targetCategoryId: String? = null,
+    @SerialName("target_listing_id") val targetListingId: String? = null,
+    @SerialName("sort_order") val sortOrder: Int = 0,
+    @SerialName("is_active") val isActive: Boolean = true,
+    @SerialName("starts_at") val startsAt: String? = null,
+    @SerialName("ends_at") val endsAt: String? = null,
+    @SerialName("updated_at") val updatedAt: String? = null,
+)

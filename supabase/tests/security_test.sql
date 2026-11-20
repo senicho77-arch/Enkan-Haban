@@ -228,6 +228,33 @@ reset role; set role authenticated;
 select admin_set_category_order('phones', '{}');
 select t.ok((select count(*) from admin_get_category_order('phones')) = 0, 'empty array clears the order');
 
+-- Advert banners (admins only)
+reset role; select t.act('00000000-0000-0000-0000-00000000000b'); set role authenticated;
+select t.fails($$insert into promo_banners (title) values ('Fake ad')$$, 'row-level security', 'normal user cannot post a banner');
+select t.fails($$insert into storage.objects (bucket_id, name) values ('listing-images', 'promos/x.jpg')$$, 'row-level security', 'normal user cannot upload a banner picture');
+reset role; select t.act('00000000-0000-0000-0000-00000000000d'); set role authenticated;
+insert into promo_banners (title, sort_order) values ('Second', 2) returning id as pb2 \gset
+insert into promo_banners (title, image_path, sort_order, target_category_id) values ('First', 'promos/a.jpg', 1, 'phones') returning id as pb1 \gset
+insert into promo_banners (title, sort_order, is_active) values ('Hidden', 0, false) returning id as pb3 \gset
+insert into promo_banners (title, sort_order, ends_at) values ('Expired', 0, now() - interval '1 day') returning id as pb4 \gset
+insert into promo_banners (title, sort_order, starts_at) values ('Later', 0, now() + interval '1 day');
+insert into storage.objects (bucket_id, name) values ('listing-images', 'promos/a.jpg');
+select t.ok(true, 'admin posts banners and uploads a banner picture');
+select t.fails($$insert into promo_banners (subtitle) values ('no title, no picture')$$, 'promo_banners_has_content', 'banner needs a title or a picture');
+select t.ok((select count(*) from promo_banners) = 5, 'admin sees all banners');
+update promo_banners set title = 'Second!' where id = :'pb2';
+select t.ok((select title from promo_banners where id = :'pb2') = 'Second!', 'admin edits a banner');
+reset role; select t.act('00000000-0000-0000-0000-00000000000b'); set role authenticated;
+update promo_banners set title = 'Hacked' where id = :'pb2';
+delete from promo_banners where id = :'pb1';
+select t.ok((select count(*) from promo_banners where title = 'Hacked') = 0 and (select count(*) from promo_banners where id = :'pb1') = 1, 'normal user cannot change or delete banners');
+reset role; set role anon;
+select t.ok((select array_agg(title order by sort_order, created_at) from promo_banners) = array['First', 'Second!'], 'anon sees only live banners, in order');
+select t.fails($$delete from promo_banners$$, 'permission denied', 'anon cannot delete banners');
+reset role; select t.act('00000000-0000-0000-0000-00000000000d'); set role authenticated;
+delete from promo_banners where id = :'pb3';
+select t.ok((select count(*) from promo_banners where id = :'pb3') = 0, 'admin deletes a banner');
+
 reset role;
 select t.ok((select count(*) from pg_publication_tables where pubname = 'supabase_realtime' and tablename = 'messages') = 1, 'messages published to realtime');
 \pset tuples_only on

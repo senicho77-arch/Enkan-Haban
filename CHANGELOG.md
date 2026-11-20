@@ -7,6 +7,15 @@
   number (in `androidApp/build.gradle.kts` and `iosApp/Configuration/Config.xcconfig`) and a git tag
   like `v1.0.1`. GitHub offers each tag as a zip download.
 
+## 1.0.3
+ስእሊ ማስታወቂያ ብኣድሚን ጥራይ / Advert banners by the admin only:
+- 📢 The banners at the top of the home screen now come from the database (`promo_banners`) instead of being fixed in the app.
+- Only admins can post, edit, hide, reorder or delete them — the database refuses everyone else (RLS + 10 new SQL tests).
+- New admin screen "📢 ምሕደራ ማስታወቂያ" (Account tab, admins only) with a posting form: picture, title, text,
+  button text, colour, what a tap opens (a category), start/end date, on/off, and a live preview.
+- Banner pictures are stored in Supabase Storage under `listing-images/promos/` (admins only).
+- New migration: `supabase/migrations/20261120000000_promo_banners.sql` — run it once in the SQL Editor.
+
 ## 1.0.2
 ምስ Supabase ምትእስሳር / Connected to Supabase:
 - 🔌 The app reads real posts and categories from Supabase when `SupabaseConfig.kt` has the project URL and anon key

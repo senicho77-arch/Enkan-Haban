@@ -3,6 +3,8 @@ package com.example.enkan_haban
 import com.example.enkan_haban.data.CartRepository
 import com.example.enkan_haban.data.InMemoryAdminRepository
 import com.example.enkan_haban.data.InMemoryProductRepository
+import com.example.enkan_haban.data.InMemoryPromoRepository
+import com.example.enkan_haban.data.liveBanners
 import com.example.enkan_haban.data.SampleData
 import com.example.enkan_haban.data.SavedRepository
 import com.example.enkan_haban.data.filterProducts
@@ -15,6 +17,10 @@ import com.example.enkan_haban.domain.ListingDraft
 import com.example.enkan_haban.domain.ListingType
 import com.example.enkan_haban.domain.Placement
 import com.example.enkan_haban.domain.Product
+import com.example.enkan_haban.domain.PromoBanner
+import com.example.enkan_haban.ui.admin.PromoAdminViewModel
+import com.example.enkan_haban.ui.admin.PromoForm
+import com.example.enkan_haban.ui.admin.validatePromo
 import com.example.enkan_haban.domain.Seller
 import com.example.enkan_haban.ui.admin.AdminOrderViewModel
 import com.example.enkan_haban.ui.navigation.Navigator
@@ -457,5 +463,64 @@ class DatabasePriceTest {
         val cents = minorToUsdCents(45_000, "UGX")!!
         assertEquals("UGX 45,000", formatPrice(cents, Currency.UGX))
         assertNull(minorToUsdCents(100, "XYZ"))
+    }
+}
+
+class PromoBannerTest {
+    private val now = 1_000_000L
+
+    @Test
+    fun onlyLiveBannersShowInOrder() {
+        val banners = listOf(
+            PromoBanner(id = "b", title = "B", sortOrder = 2),
+            PromoBanner(id = "a", title = "A", sortOrder = 1),
+            PromoBanner(id = "off", title = "Off", isActive = false),
+            PromoBanner(id = "old", title = "Old", endsAtMs = now - 1),
+            PromoBanner(id = "soon", title = "Soon", startsAtMs = now + 1),
+        )
+        assertEquals(listOf("a", "b"), liveBanners(banners, now).map { it.id })
+    }
+
+    @Test
+    fun onlyAdminCanPost() {
+        val repo = InMemoryPromoRepository(isAdmin = { false })
+        var error: Throwable? = null
+        CoroutineScope(Dispatchers.Unconfined).launch {
+            try { repo.save(PromoBanner(title = "Ad"), null) } catch (t: IllegalStateException) { error = t }
+        }
+        assertTrue(error != null)
+        assertEquals(3, repo.banners.value.size)
+    }
+
+    @Test
+    fun bannerNeedsTitleOrPicture() {
+        assertTrue("title" in validatePromo(PromoForm(PromoBanner())))
+        assertTrue(validatePromo(PromoForm(PromoBanner(title = "Sale"))).isEmpty())
+        assertTrue(validatePromo(PromoForm(PromoBanner(), newImage = byteArrayOf(1))).isEmpty())
+    }
+
+    @Test
+    fun adminAddsMovesAndDeletesBanners() {
+        val repo = InMemoryPromoRepository(isAdmin = { true })
+        val vm = PromoAdminViewModel(repo, scope = CoroutineScope(Dispatchers.Unconfined))
+        vm.startNew()
+        vm.update { it.copy(title = "Big sale") }
+        vm.save()
+        assertEquals("ማስታወቂያ ተዓቂቡ", vm.uiState.value.message)
+        assertEquals(null, vm.uiState.value.form)
+        val ids = vm.uiState.value.banners.map { it.id }
+        assertEquals(4, ids.size)
+        val newId = ids.last()
+        assertEquals("Big sale", vm.uiState.value.banners.last().title)
+
+        vm.move(newId, up = true)
+        assertEquals(newId, vm.uiState.value.banners[2].id)
+        assertEquals(listOf(1, 2, 3, 4), vm.uiState.value.banners.map { it.sortOrder })
+
+        vm.toggleActive(newId)
+        assertTrue(liveBanners(repo.banners.value, now).none { it.id == newId })
+
+        vm.delete(newId)
+        assertTrue(vm.uiState.value.banners.none { it.id == newId })
     }
 }
